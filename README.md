@@ -1,54 +1,108 @@
-# DeafNav 🛰️
-### HD Unified Interface for Deaf-Accessible Transit
+# 🛰️ DeafNav — HD Unified Interface for Deaf-Accessible Transit
+### Operationalizing real-time IoT and Vision AI for seamless clinical-grade transit accessibility.
 
 ![Dashboard Screenshot](./screenshots/dashboard.png)
 
-DeafNav is a cutting-edge, real-time command center designed to provide unprecedented transit accessibility for the deaf and hard-of-hearing community. This platform integrates real-time IoT telemetry from wearable devices, live video translation, and haptic feedback controls into a unified, professional dashboard.
+Next.js TypeScript Tailwind Framer-Motion IoT-MQTT WebSockets
 
-## 🚀 Key Features
+## 📋 Overview
+This project implements a comprehensive accessibility hub for public transport, specifically designed for the deaf and hard-of-hearing community. It operationalizes haptic controls, real-time sign language translation, and live transit telemetry to ensure that navigation and emergency alerts are fully auditable and compliant with EU accessibility mandates.
 
-- **Live Transit Telemetry:** Real-time arrival and departure data for Athens public transport (OASA Line 2 & 3).
-- **IoT Bracelet Integration:** Live monitoring of device connectivity, battery status, and user stress levels (BPM).
-- **Haptic Control Hub:** Customizable vibration patterns (Standard, Soft Pulse, Rapid Alert, Emergency SOS) for tactile notifications.
-- **Vision AI Translation:** Live transcription of sign language video feeds into text.
-- **Support Command Center:** Instant SOS video calls with sign-language-capable representatives.
-- **EU Standard Compliance:** Built to meet high accessibility and safety standards.
+## 🎯 The Problem
+Modern transit infrastructure often fails the deaf community in critical ways:
+* **Audio-Only Emergency Alerts:** Critical station announcements are often exclusive to audio, leaving deaf users unaware of delays or hazards.
+* **The Communication Gap:** High-stress environments (like crowded stations) make manual communication difficult and slow.
+* **Invisible Telemetry:** Real-time data exists but is not presented in a way that triggers physical (haptic) awareness for users without auditory cues.
+* **Non-compliance Risks:** Failure to provide equitable access violates the **European Accessibility Act (Directive 2019/882)**, carrying significant legal and social implications.
 
-## 🛠️ Technology Stack
+## ✅ The Solution
+This platform transforms passive transit data into an active, tactile, and visual experience using specialized controls:
 
-- **Frontend:** Next.js, Framer Motion, Vanilla CSS, Lucide Icons.
-- **Backend:** Node.js, WebSocket (Telemetry), MQTT (Gateway Interaction).
-- **Design:** Glassmorphism, Premium Dark UI, Responsive Layout.
+| Control | Method | Purpose | Regulation |
+| :--- | :--- | :--- | :--- |
+| 📳 Haptic Pulse | MQTT + IoT | Tactile notification for arrivals & alerts | EU Act Art. 4 |
+| 🖐️ Sign Feed | CV + Vision AI | Real-time sign-to-text translation | WCAG 2.1 Level AAA |
+| 📍 Live Sync | WebSockets | Real-time telemetry for Lines 2 & 3 | GDPR Art. 13 |
+| 🆘 Live Chat | WebRTC | Direct link to sign-language agents | EU Act Art. 12 |
 
-## 📦 Getting Started
+## 🏗️ Architecture
+The project utilizes a Unified Accessibility Pipeline (UAP) architecture:
 
-### Prerequisites
+```mermaid
+graph TD
+    A[Public Transit API - OASA] -->|Real-time Data| B[DeafNav Hub]
+    B -->|WebSocket| C[HD Dashboard]
+    B -->|MQTT| D[IoT Wearable Bracelet]
+    D -->|Haptic Feedback| E[User]
+    F[Live Camera Feed] -->|Vision AI| G[Sign Language Translator]
+    G -->|Text Overlay| C
+    C -->|SOS Trigger| H[Support Agent]
+```
 
-- Node.js (v18+)
-- npm or yarn
+## � Project Structure
+```text
+dpbl/
+├── src/
+│   ├── app/                # Next.js App Router (Layouts & Navigation)
+│   ├── components/         # Reusable UI Components (Dashboard, LiveFeed)
+│   └── lib/                # Utility functions & API clients
+├── backend/                # Telemetry & MQTT Services
+├── firmware/               # IoT Bracelet C++ (Arduino/ESP32) Code
+├── mobile/                 # React Native / Capacitor Mobile App Views
+├── prisma/                 # Database Schema (Relational Data)
+├── public/                 # Static assets (Logos, Backgrounds)
+├── screenshots/            # UI Documentation
+├── docs/                   # Implementation Specs & Compliance Docs
+└── tests/                  # Integration & Accessibility Testing
+```
 
-### Installation
-
-1. Clone the repository:
+## 🚀 Quick Start
+1. **Clone & Install**
    ```bash
    git clone https://github.com/FilippeZ/deafnav-europeancommision.git
    cd deafnav-europeancommision
-   ```
-
-2. Install dependencies:
-   ```bash
    npm install
    ```
-
-3. Run the development server:
+2. **Setup Environment**
+   Configure your `.env` with the necessary OASA API keys and MQTT broker details.
+3. **Launch the Hub**
    ```bash
    npm run dev
    ```
 
-4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ⚖️ Regulatory Compliance
+### European Accessibility Act (Directive 2019/882)
+| Category | Requirement | Solution |
+| :--- | :--- | :--- |
+| **Information** | Multi-modal presentation | Visual dashboard + Haptic pulses |
+| **Communication** | Real-time interaction | Sign-language capable Live Chat |
+| **Emergency** | Accessible alerts | SOS override + Force-vibration alerts |
 
-## 📱 Mobile Compatibility
-DeafNav is designed with a mobile-first approach, ensuring seamless transitions between the desktop dashboard and wearable device interactions.
+### GDPR / Data Privacy
+| Article | Requirement | Solution |
+| :--- | :--- | :--- |
+| **Art. 22** | Automated Decision Making | Transparent UI explaining arrival logic |
+| **Art. 32** | Security of Processing | Encrypted MQTT/WebSocket channels |
 
----
-*Developed for the European Commission CEF Mobility Initiative.*
+## �️ Accessibility Intelligence
+### Haptic Feedback Lab
+Mitigates environmental noise risks by using specialized vibrations:
+* **Standard Guidance:** 200ms pulse for routine updates.
+* **Rapid Alert:** High-frequency pulses for immediate boarding.
+* **Emergency SOS:** Continuous patterns for safety evacuations.
+
+### Vision AI Translation (SL-CV)
+Proprietary sign language computer vision model that identifies key gestures and converts them into high-contrast textual overlays, ensuring no user is left behind during spoken announcements.
+
+## 🛠️ Technologies
+* **Frameworks:** Next.js 15, React 19, Tailwind CSS.
+* **Animations:** Framer Motion (State-driven transitions).
+* **Communication:** MQTT (IoT), WebSockets (Telemetry), WebRTC (Voice/Video).
+* **Compliance Framework:** European Commission CEF Mobility standards.
+
+## 📄 License
+This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
+
+## 👤 Author
+**Filippos-Paraskevas Zygouris**
+*Lead Architect & Thesis Researcher*
