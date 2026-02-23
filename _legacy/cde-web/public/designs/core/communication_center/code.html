@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html lang="el"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#003399", // EU Blue
+              "accent-gold": "#FFCC00", // EU Gold
+              "background-light": "#f5f6f8",
+              "background-dark": "#0f1623",
+            },
+            fontFamily: {
+              "display": ["Public Sans", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<title>DeafNav - Κέντρο Επικοινωνίας</title>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between items-center h-16">
+<!-- Logo -->
+<div class="flex items-center gap-3">
+<div class="bg-primary p-1.5 rounded-lg text-white">
+<span class="material-symbols-outlined text-2xl">directions_subway</span>
+</div>
+<div class="flex flex-col">
+<h1 class="text-xl font-black tracking-tight text-primary leading-none uppercase">DeafNav</h1>
+<span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">EU Accessibility</span>
+</div>
+</div>
+<!-- Desktop Nav -->
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-primary font-bold border-b-2 border-primary py-5 text-sm" href="#">Κέντρο Επικοινωνίας</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-primary font-medium text-sm transition-colors" href="#">Ιστορικό</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-primary font-medium text-sm transition-colors" href="#">Συχνές Ερωτήσεις</a>
+</nav>
+<!-- Profile & Notifications -->
+<div class="flex items-center gap-3">
+<button class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+</button>
+<div class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+<span class="material-symbols-outlined">account_circle</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<!-- Hero Section & Status -->
+<div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h2 class="text-3xl font-black text-slate-900 dark:text-white">Κέντρο Επικοινωνίας &amp; Υποστήριξης</h2>
+<p class="text-slate-500 dark:text-slate-400 mt-1">Εξειδικευμένη βοήθεια για επιβάτες με προβλήματα ακοής.</p>
+</div>
+<!-- Staff Status Indicator -->
+<div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl flex items-center gap-3 shadow-sm">
+<span class="relative flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+</span>
+<span class="text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-tight">Προσωπικό Online</span>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Left Column: Communication Tools -->
+<div class="lg:col-span-8 space-y-6">
+<!-- Quick Action Buttons -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<button class="flex items-center justify-center gap-3 bg-primary hover:bg-primary/90 text-white p-6 rounded-xl transition-all shadow-lg shadow-primary/20 group">
+<span class="material-symbols-outlined text-3xl group-hover:scale-110 transition-transform">interpreter_mode</span>
+<div class="text-left">
+<span class="block text-lg font-bold">Βιντεοκλήση με Διερμηνέα</span>
+<span class="block text-xs opacity-80 uppercase font-semibold">Ελληνική Νοηματική Γλώσσα</span>
+</div>
+</button>
+<button class="flex items-center justify-center gap-3 bg-white dark:bg-slate-800 border-2 border-primary text-primary p-6 rounded-xl hover:bg-primary/5 transition-all">
+<span class="material-symbols-outlined text-3xl">chat_bubble</span>
+<div class="text-left">
+<span class="block text-lg font-bold text-slate-900 dark:text-white">Ζωντανή Συνομιλία</span>
+<span class="block text-xs text-slate-500 uppercase font-semibold">Κείμενο σε πραγματικό χρόνο</span>
+</div>
+</button>
+</div>
+<!-- Chat Interface Simulator -->
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col h-[500px]">
+<!-- Chat Header -->
+<div class="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full bg-accent-gold flex items-center justify-center text-primary font-bold">
+<span class="material-symbols-outlined">support_agent</span>
+</div>
+<div>
+<p class="text-sm font-bold">Μαρία Π. (Εξυπηρέτηση Metro)</p>
+<p class="text-[10px] text-green-600 font-bold flex items-center gap-1">
+<span class="size-1.5 rounded-full bg-green-500"></span> ΣΕ ΣΥΝΔΕΣΗ
+                                </p>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"><span class="material-symbols-outlined text-slate-500">settings</span></button>
+<button class="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors"><span class="material-symbols-outlined">close</span></button>
+</div>
+</div>
+<!-- Chat Messages -->
+<div class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/30 dark:bg-slate-900">
+<div class="flex flex-col items-center mb-4">
+<span class="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-500 px-3 py-1 rounded-full font-bold uppercase tracking-wider">Σήμερα</span>
+</div>
+<!-- Staff Message -->
+<div class="flex items-start gap-3 max-w-[80%]">
+<div class="size-8 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-sm">person</span>
+</div>
+<div class="bg-white dark:bg-slate-800 p-3 rounded-2xl rounded-tl-none border border-slate-100 dark:border-slate-700 shadow-sm">
+<p class="text-sm leading-relaxed">Καλησπέρα σας από την DeafNav Metro! Πώς μπορώ να σας βοηθήσω με τη μετακίνησή σας σήμερα;</p>
+<span class="text-[9px] text-slate-400 mt-1 block text-right">14:20</span>
+</div>
+</div>
+<!-- User Message -->
+<div class="flex items-start gap-3 max-w-[80%] ml-auto flex-row-reverse">
+<div class="size-8 rounded-full bg-primary flex-shrink-0 flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-sm">person</span>
+</div>
+<div class="bg-primary text-white p-3 rounded-2xl rounded-tr-none shadow-sm">
+<p class="text-sm leading-relaxed">Γεια σας, θα ήθελα να μάθω αν ο ανελκυστήρας στον σταθμό Συντάγματος λειτουργεί σήμερα.</p>
+<span class="text-[9px] text-primary-200 mt-1 block text-right text-white/70">14:22</span>
+</div>
+</div>
+<!-- Typing Indicator -->
+<div class="flex items-center gap-1 text-slate-400">
+<span class="text-[10px] italic">Η Μαρία πληκτρολογεί</span>
+<span class="flex gap-0.5">
+<span class="size-1 bg-slate-300 rounded-full"></span>
+<span class="size-1 bg-slate-300 rounded-full"></span>
+<span class="size-1 bg-slate-300 rounded-full"></span>
+</span>
+</div>
+</div>
+<!-- Chat Input -->
+<div class="p-4 border-t border-slate-100 dark:border-slate-800">
+<div class="relative flex items-center">
+<input class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl py-3 pl-4 pr-12 focus:ring-2 focus:ring-primary text-sm" placeholder="Γράψτε το μήνυμά σας εδώ..." type="text"/>
+<button class="absolute right-2 p-2 text-primary hover:bg-primary/10 rounded-lg transition-all">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: FAQ & History -->
+<div class="lg:col-span-4 space-y-6">
+<!-- History Section -->
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+<div class="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+<h3 class="font-bold text-sm uppercase tracking-tight flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">history</span>
+                            Ιστορικό Αιτημάτων
+                        </h3>
+<a class="text-[11px] font-bold text-primary hover:underline" href="#">ΟΛΑ</a>
+</div>
+<div class="divide-y divide-slate-50 dark:divide-slate-800">
+<div class="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer">
+<div class="flex justify-between mb-1">
+<span class="text-[10px] font-black text-slate-400 uppercase">Ticket #4921</span>
+<span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold uppercase tracking-wider">Ολοκληρωθηκε</span>
+</div>
+<p class="text-sm font-bold line-clamp-1">Δυσλειτουργία οθόνης ενημέρωσης</p>
+<p class="text-[11px] text-slate-500 mt-1">12 Οκτωβρίου 2023</p>
+</div>
+<div class="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer">
+<div class="flex justify-between mb-1">
+<span class="text-[10px] font-black text-slate-400 uppercase">Ticket #4855</span>
+<span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-bold uppercase tracking-wider">Σε εξελιξη</span>
+</div>
+<p class="text-sm font-bold line-clamp-1">Αίτημα για συνοδεία (Μοναστηράκι)</p>
+<p class="text-[11px] text-slate-500 mt-1">10 Οκτωβρίου 2023</p>
+</div>
+</div>
+</div>
+<!-- FAQ Section -->
+<div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+<div class="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+<h3 class="font-bold text-sm uppercase tracking-tight flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">quiz</span>
+                            Συχνές Ερωτήσεις
+                        </h3>
+</div>
+<div class="p-4 space-y-4">
+<div class="group cursor-pointer">
+<div class="flex justify-between items-center mb-1">
+<p class="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors">Πώς ενεργοποιώ τις ειδοποιήσεις δόνησης;</p>
+<span class="material-symbols-outlined text-sm text-slate-400">chevron_right</span>
+</div>
+<div class="h-px bg-slate-100 dark:bg-slate-800 w-full"></div>
+</div>
+<div class="group cursor-pointer">
+<div class="flex justify-between items-center mb-1">
+<p class="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors">Πού βρίσκονται τα σημεία SOS;</p>
+<span class="material-symbols-outlined text-sm text-slate-400">chevron_right</span>
+</div>
+<div class="h-px bg-slate-100 dark:bg-slate-800 w-full"></div>
+</div>
+<div class="group cursor-pointer">
+<div class="flex justify-between items-center mb-1">
+<p class="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors">Δικαιούμαι μειωμένο εισιτήριο;</p>
+<span class="material-symbols-outlined text-sm text-slate-400">chevron_right</span>
+</div>
+<div class="h-px bg-slate-100 dark:bg-slate-800 w-full"></div>
+</div>
+<button class="w-full py-2 text-xs font-black text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all uppercase tracking-widest">
+                            ΟΛΕΣ ΟΙ ΕΡΩΤΗΣΕΙΣ
+                        </button>
+</div>
+</div>
+<!-- EU Compliance / Branding -->
+<div class="bg-primary p-6 rounded-2xl text-white relative overflow-hidden group">
+<div class="relative z-10 flex flex-col gap-2">
+<div class="flex gap-1 mb-2">
+<div class="size-4 flex flex-wrap gap-0.5">
+<div class="size-1 rounded-full bg-accent-gold"></div>
+<div class="size-1 rounded-full bg-accent-gold"></div>
+<div class="size-1 rounded-full bg-accent-gold"></div>
+<div class="size-1 rounded-full bg-accent-gold"></div>
+</div>
+<span class="text-[10px] font-bold tracking-widest uppercase">EU FUNDED PROJECT</span>
+</div>
+<p class="text-xs font-medium leading-relaxed opacity-90">Η DeafNav υποστηρίζεται από το Ευρωπαϊκό Ταμείο Περιφερειακής Ανάπτυξης για την καθολική προσβασιμότητα.</p>
+</div>
+<!-- Abstract Background Graphic -->
+<div class="absolute -right-10 -bottom-10 size-40 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-all"></div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="mt-12 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+<div class="flex flex-col items-center gap-4">
+<div class="flex gap-6">
+<a class="text-[11px] font-bold text-slate-500 hover:text-primary uppercase tracking-widest" href="#">Πολιτική Απορρήτου</a>
+<a class="text-[11px] font-bold text-slate-500 hover:text-primary uppercase tracking-widest" href="#">Όροι Χρήσης</a>
+<a class="text-[11px] font-bold text-slate-500 hover:text-primary uppercase tracking-widest" href="#">Προσβασιμότητα</a>
+</div>
+<div class="flex items-center gap-2 opacity-50">
+<span class="material-symbols-outlined text-sm">universal_currency_alt</span>
+<p class="text-[10px] font-medium">© 2023 DeafNav. Με την υποστήριξη της Ευρωπαϊκής Ένωσης.</p>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

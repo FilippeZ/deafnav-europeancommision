@@ -1,0 +1,8 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/iot/status/route": "app/api/iot/status/route.js",
+  "/api/metro/arrivals/route": "app/api/metro/arrivals/route.js",
+  "/page": "app/page.js",
+  "/api/metro/announcements/route": "app/api/metro/announcements/route.js",
+  "/api/iot/stream/route": "app/api/iot/stream/route.js"
+}

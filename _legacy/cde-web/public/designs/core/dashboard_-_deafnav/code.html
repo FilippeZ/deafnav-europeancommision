@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+
+<html lang="el"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DeafNav Dashboard | EU Accessibility</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#003399",
+                        "accent": "#FFCC00",
+                        "background-light": "#f5f6f8",
+                        "background-dark": "#0f1623",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Public Sans', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="relative flex min-h-screen flex-col overflow-x-hidden">
+<!-- Global Header -->
+<header class="flex items-center justify-between bg-primary px-6 py-4 lg:px-20 text-white shadow-lg border-b-4 border-accent">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3">
+<!-- EU Inspired Logo -->
+<div class="relative flex items-center justify-center size-10 bg-accent rounded-sm shadow-md overflow-hidden">
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary scale-125">stars</span>
+</div>
+</div>
+<div class="flex flex-col">
+<h1 class="text-xl font-black leading-none tracking-tight">DeafNav</h1>
+<span class="text-[10px] uppercase font-bold tracking-widest opacity-80">EU Standards</span>
+</div>
+</div>
+<nav class="hidden md:flex items-center gap-8 ml-8">
+<a class="text-sm font-semibold border-b-2 border-accent pb-1" href="#">Πίνακας Ελέγχου</a>
+<a class="text-sm font-medium opacity-80 hover:opacity-100 transition-opacity" href="#">Ανακοινώσεις</a>
+<a class="text-sm font-medium opacity-80 hover:opacity-100 transition-opacity" href="#">Υποστήριξη</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden sm:flex items-center bg-white/10 rounded-lg px-3 py-1.5 border border-white/20">
+<span class="material-symbols-outlined text-sm mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm placeholder:text-white/60 w-32 lg:w-48" placeholder="Αναζήτηση..." type="text"/>
+</div>
+<button class="flex items-center justify-center p-2 rounded-lg bg-accent text-primary hover:bg-white transition-colors">
+<span class="material-symbols-outlined font-bold">accessibility_new</span>
+</button>
+<div class="size-10 rounded-full border-2 border-white/30 overflow-hidden bg-white/20" data-alt="User profile avatar placeholder">
+<img alt="User" class="w-full h-full object-cover" data-alt="Abstract geometric user profile icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJtsXh98jUC5SGEOsHy2ZLka34o-0s6nd9JPUvXeCMV5C4ahEtj3BqpcKKqSHr-soB71Vq1xWGr-0VWib68SYBkuYYkT_qDWPJj9fpgNs54SLB1UEj2delYH6uzxp5cK1HWDsUcdo0WOKTc4x6WMhRIIEYxTaJLEcGrjHAsuGr2DCr_CXvI0FCQj6uy7hcrPbH_Do91PrJCM3FgO_LnRKpdyZSOfBI6W6VDicnj9_sM-aamZLyk7awaqjswk9vzk-Y4nwzwz-SO5JC"/>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="hidden lg:flex flex-col w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-6 gap-8">
+<div class="flex flex-col gap-2">
+<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-3">Κεντρικό Μενού</p>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg bg-primary/10 text-primary font-bold" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm">Πίνακας Ελέγχου</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">vibration</span>
+<span class="text-sm">Ρυθμίσεις Δόνησης</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="text-sm">Ιστορικό</span>
+</a>
+</div>
+<div class="flex flex-col gap-2">
+<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-3">Εργαλεία</p>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">map</span>
+<span class="text-sm">Πλοήγηση</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" href="#">
+<span class="material-symbols-outlined">campaign</span>
+<span class="text-sm">Ανακοινώσεις</span>
+</a>
+</div>
+<div class="mt-auto p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+<p class="text-xs font-bold text-slate-500 mb-2">Υποστήριξη</p>
+<button class="w-full bg-primary text-white py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">chat_bubble</span>
+                        Live Chat
+                    </button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto p-4 lg:p-8">
+<div class="max-w-6xl mx-auto flex flex-col gap-8">
+<!-- Hero Section: Station Status -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="lg:col-span-2 relative overflow-hidden bg-primary rounded-xl shadow-xl flex flex-col md:flex-row items-stretch border-l-8 border-accent">
+<div class="p-8 flex flex-col justify-center gap-4 text-white z-10 flex-1">
+<div class="flex items-center gap-2 bg-white/20 self-start px-3 py-1 rounded-full text-xs font-bold">
+<span class="flex size-2 bg-green-400 rounded-full animate-pulse"></span>
+                                    LIVE: Σταθμός Συντάγματος
+                                </div>
+<h2 class="text-4xl md:text-5xl font-black leading-tight tracking-tight">
+                                    Επόμενη Άφιξη: <span class="text-accent">05:42</span>
+</h2>
+<p class="text-lg opacity-90">Γραμμή 2 (Κόκκινη) - Κατεύθυνση: Ελληνικό</p>
+<div class="mt-4 flex gap-4">
+<button class="bg-accent text-primary px-6 py-3 rounded-lg font-bold hover:bg-white transition-colors flex items-center gap-2 shadow-lg shadow-accent/20">
+<span class="material-symbols-outlined">schedule</span>
+                                        Πλήρες Δρομολόγιο
+                                    </button>
+</div>
+</div>
+<div class="relative w-full md:w-1/3 min-h-[200px] bg-slate-200" data-location="Athens" style="">
+<div class="absolute inset-0 bg-gradient-to-r from-primary via-transparent to-transparent z-10"></div>
+<img alt="Metro map" class="w-full h-full object-cover grayscale opacity-50" data-alt="A stylized map of the Athens metro system" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqCFAW17U3Eop3x3thnAOrfIZb-ljyC8L3A6dopwamGL84pUKBAYz0mrqh2SgfGhafT_rsB2lbf6E4uuzpZm_5ALGcE9XNV8z_y7tjer4L1CWwtJkdVOExwcVJahGGthMyiud2jhIQVJr01sYJT-wPeEz7lM_tlQaJx-3Cky54S03kAX6LOPSmKgiZFXzv6YITnYQ9ZlYsUS-F9_6rqHixrzpA7tnAawcDeFoWFNKnylz3hA5sNyjZtezd2CqmsopZdwAQSc1d9Chy"/>
+</div>
+</div>
+<!-- Quick Link / Announcement Summary -->
+<div class="bg-white dark:bg-slate-900 rounded-xl shadow-md border border-slate-200 dark:border-slate-800 p-6 flex flex-col gap-4">
+<h3 class="font-bold flex items-center gap-2 text-slate-500 uppercase text-xs tracking-widest">
+<span class="material-symbols-outlined text-sm text-primary">campaign</span>
+                                Τελευταία Ανακοίνωση
+                            </h3>
+<div class="flex-1 flex flex-col justify-center">
+<p class="text-xl font-bold leading-snug">"Προσοχή: Καθυστέρηση 5 λεπτών στην Γραμμή 3 λόγω τεχνικού ελέγχου."</p>
+<span class="text-xs text-slate-400 mt-2">Πριν από 2 λεπτά • Μετατροπή από ήχο</span>
+</div>
+<button class="w-full border-2 border-primary text-primary font-bold py-2 rounded-lg hover:bg-primary/5 transition-colors">
+                                Όλες οι ανακοινώσεις
+                            </button>
+</div>
+</section>
+<!-- Smart Bracelet Status & Haptic Feedback -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Connectivity Status -->
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-md border border-slate-200 dark:border-slate-800 flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-black text-slate-400 uppercase tracking-widest">Κατάσταση</span>
+<span class="material-symbols-outlined text-primary">watch</span>
+</div>
+<div>
+<h4 class="text-2xl font-black text-slate-900 dark:text-white">Συνδεδεμένο</h4>
+<p class="text-sm font-bold text-green-600 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">check_circle</span>
+                                    Σε λειτουργία
+                                </p>
+</div>
+</div>
+<!-- Battery Status -->
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-md border border-slate-200 dark:border-slate-800 flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-black text-slate-400 uppercase tracking-widest">Μπαταρία</span>
+<span class="material-symbols-outlined text-primary">battery_5_bar</span>
+</div>
+<div>
+<h4 class="text-2xl font-black text-slate-900 dark:text-white">85%</h4>
+<div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
+<div class="bg-green-500 h-full rounded-full" style="width: 85%;"></div>
+</div>
+<p class="text-[10px] text-slate-400 mt-1">Απομένουν ~14 ώρες</p>
+</div>
+</div>
+<!-- Pulse/Stress -->
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-md border border-slate-200 dark:border-slate-800 flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-black text-slate-400 uppercase tracking-widest">Παλμοί</span>
+<span class="material-symbols-outlined text-red-500 animate-pulse">favorite</span>
+</div>
+<div>
+<h4 class="text-2xl font-black text-slate-900 dark:text-white">72 <span class="text-sm font-normal text-slate-400">bpm</span></h4>
+<p class="text-sm font-bold text-primary">Normal</p>
+</div>
+</div>
+<!-- Vibration Intensity Quick Select -->
+<div class="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-md border border-slate-200 dark:border-slate-800 flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-black text-slate-400 uppercase tracking-widest">Δόνηση</span>
+<span class="material-symbols-outlined text-primary">settings_input_component</span>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 bg-slate-100 dark:bg-slate-800 py-2 rounded-lg text-xs font-bold hover:bg-primary hover:text-white transition-all">Ήπια</button>
+<button class="flex-1 bg-primary text-white py-2 rounded-lg text-xs font-bold shadow-md">Μέτρια</button>
+<button class="flex-1 bg-slate-100 dark:bg-slate-800 py-2 rounded-lg text-xs font-bold hover:bg-primary hover:text-white transition-all">Ισχυρή</button>
+</div>
+</div>
+</section>
+<!-- Detailed Settings Grid -->
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<!-- Vibration Pattern Settings -->
+<div class="bg-white dark:bg-slate-900 rounded-xl shadow-md border border-slate-200 dark:border-slate-800 p-8">
+<div class="flex items-center justify-between mb-8">
+<h3 class="text-xl font-black flex items-center gap-3">
+<span class="material-symbols-outlined text-primary p-2 bg-primary/10 rounded-lg">vibration</span>
+                                    Ρυθμίσεις Δόνησης
+                                </h3>
+<button class="text-sm font-bold text-primary hover:underline">Επαναφορά</button>
+</div>
+<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-center">
+<label class="font-bold text-sm">Ένταση Ειδοποίησης</label>
+<span class="text-sm font-black text-primary">75%</span>
+</div>
+<input class="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-primary" type="range"/>
+</div>
+<hr class="border-slate-100 dark:border-slate-800"/>
+<div class="flex flex-col gap-4">
+<label class="font-bold text-sm">Μοτίβο Άφιξης</label>
+<div class="grid grid-cols-2 gap-3">
+<button class="flex items-center gap-3 p-3 rounded-lg border-2 border-primary bg-primary/5 text-primary font-bold text-sm">
+<span class="material-symbols-outlined text-lg">pulse_alert</span>
+                                            Συνεχές
+                                        </button>
+<button class="flex items-center gap-3 p-3 rounded-lg border-2 border-slate-100 dark:border-slate-800 hover:border-primary/30 transition-all font-medium text-sm">
+<span class="material-symbols-outlined text-lg">waves</span>
+                                            Διακοπτόμενο
+                                        </button>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-primary/5 rounded-xl">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">notifications_active</span>
+<div>
+<p class="text-sm font-bold">Οπτική Ειδοποίηση</p>
+<p class="text-[10px] text-slate-500 leading-tight">Αναβοσβήνει η οθόνη κατά την άφιξη</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- Real-time Navigation Preview -->
+<div class="bg-white dark:bg-slate-900 rounded-xl shadow-md border border-slate-200 dark:border-slate-800 p-8 flex flex-col gap-6">
+<h3 class="text-xl font-black flex items-center gap-3">
+<span class="material-symbols-outlined text-primary p-2 bg-primary/10 rounded-lg">directions_transit</span>
+                                Ζωντανή Πλοήγηση
+                            </h3>
+<div class="flex-1 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl relative overflow-hidden flex flex-col items-center justify-center p-8 bg-slate-50 dark:bg-slate-900/50">
+<div class="absolute inset-0 opacity-10 bg-[radial-gradient(#003399_1px,transparent_1px)] [background-size:20px_20px]" data-alt="Subtle dot pattern background"></div>
+<div class="relative z-10 flex flex-col items-center gap-4 text-center">
+<div class="size-16 rounded-full bg-accent flex items-center justify-center text-primary shadow-xl">
+<span class="material-symbols-outlined text-3xl font-black">moving</span>
+</div>
+<div>
+<p class="text-xl font-black">Επόμενη Στάση: Πανεπιστήμιο</p>
+<p class="text-sm text-slate-500 font-medium">Σε περίπου 2 λεπτά (0.8 χλμ)</p>
+</div>
+<div class="flex flex-col gap-2 w-full mt-4">
+<div class="flex justify-between items-center text-[10px] font-black uppercase text-slate-400 px-1">
+<span>Σύνταγμα</span>
+<span class="text-primary">Σε κίνηση</span>
+<span>Πανεπιστήμιο</span>
+</div>
+<div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 65%;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex gap-4">
+<button class="flex-1 bg-slate-100 dark:bg-slate-800 py-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">map</span>
+                                    Άνοιγμα Χάρτη
+                                </button>
+<button class="flex-1 bg-slate-100 dark:bg-slate-800 py-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">share</span>
+                                    Κοινοποίηση
+                                </button>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer Info -->
+<footer class="max-w-6xl mx-auto mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-400">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">g_translate</span>
+<span class="text-xs font-bold uppercase tracking-widest">Ελληνικά</span>
+</div>
+<span class="text-xs">|</span>
+<p class="text-xs font-medium">Συμμορφώνεται με τα πρότυπα προσβασιμότητας της Ε.Ε. (WCAG 2.1)</p>
+</div>
+<div class="flex items-center gap-6">
+<a class="text-xs hover:text-primary transition-colors" href="#">Όροι Χρήσης</a>
+<a class="text-xs hover:text-primary transition-colors" href="#">Προστασία Δεδομένων</a>
+<div class="size-6 opacity-40 grayscale hover:grayscale-0 transition-all cursor-pointer" data-alt="EU flag icon">
+<svg fill="none" viewbox="0 0 12 8" xmlns="http://www.w3.org/2000/svg">
+<rect fill="#003399" height="8" width="12"></rect>
+<path d="M6 1.5L6.15 1.95H6.6L6.25 2.25L6.4 2.7L6 2.4L5.6 2.7L5.75 2.25L5.4 1.95H5.85L6 1.5Z" fill="#FFCC00"></path>
+<!-- Placeholder for other stars -->
+</svg>
+</div>
+</div>
+</footer>
+</main>
+</div>
+</div>
+</body></html>

@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+  # 1. Ο "Μεσολαβητής" (MQTT Broker)
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+
+  # 2. Η Βάση Δεδομένων
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: deafnav_db
+    ports:
+      - "5432:5432"
+
+  # 3. Το DeafNav Backend
+  api:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - mosquitto
+    environment:
+      DATABASE_URL: "postgresql://admin:password123@postgres:5432/deafnav_db"
+      MQTT_HOST: "mosquitto"

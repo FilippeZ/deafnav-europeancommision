@@ -1,0 +1,50 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  devices   Device[]
+  messages  Message[]
+}
+
+model Device {
+  id          String   @id @default(uuid())
+  ownerId     Int
+  owner       User     @relation(fields: [ownerId], references: [id])
+  pulseLogs   PulseLog[]
+  status      String   @default("active")
+}
+
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  timestamp DateTime @default(now())
+  priority  String   @default("normal") // normal, urgent, emergency
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  senderId   Int
+  sender     User     @relation(fields: [senderId], references: [id])
+  text       String
+  createdAt  DateTime @default(now())
+}
+
+model PulseLog {
+  id        Int      @id @default(autoincrement())
+  deviceId  String
+  device    Device   @relation(fields: [deviceId], references: [id])
+  value     Int
+  timestamp DateTime @default(now())
+}

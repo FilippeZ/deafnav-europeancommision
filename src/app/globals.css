@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #003399;
+  /* Deep European Blue */
+  --accent: #FFCC00;
+  /* Vivid European Yellow */
+  --primary-glow: rgba(0, 51, 153, 0.3);
+  --accent-glow: rgba(255, 204, 0, 0.4);
+  --foreground-rgb: 15, 23, 42;
+  --background: #f8fafc;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: var(--background);
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-family: var(--font-public-sans), sans-serif;
+}
+
+.dark {
+  --foreground-rgb: 248, 250, 252;
+  --background: #0f172a;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-header {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  border-bottom: 2px solid var(--accent);
+}
+
+.dark .glass-header {
+  background: rgba(15, 23, 42, 0.8);
+  border-bottom: 2px solid var(--accent);
+}
+
+.header-nav-button {
+  @apply flex flex-col items-center justify-center px-4 transition-all hover:bg-white/10 relative h-full;
+}
+
+.header-nav-button.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--accent);
+}
+
+.badge-yellow {
+  background: var(--accent);
+  color: #000;
+  font-weight: 1000;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
