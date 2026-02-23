@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import BraceletStatus from "@/components/BraceletStatus";
 import LiveAnnouncements from "@/components/LiveAnnouncements";
+import LandingPage from "@/components/LandingPage";
 
 // --- Constants & Data ---
 
@@ -942,6 +943,11 @@ const AnnouncementsView = () => {
 
 export default function Home() {
     const [activeTab, setActiveTab] = useState("dashboard");
+    const [hasEntered, setHasEntered] = useState(false);
+
+    if (!hasEntered) {
+        return <LandingPage onEnter={() => setHasEntered(true)} />;
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
