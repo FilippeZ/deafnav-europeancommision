@@ -1,11 +1,16 @@
 # 🛰️ DeafNav — HD Unified Interface for Deaf-Accessible Transit
 ### Operationalizing real-time IoT and Vision AI for seamless clinical-grade transit accessibility.
 
+#### Landing Page Screenshot
 ![Landing Page Screenshot](./screenshots/landing.png)
+
+#### Dashboard Screenshot
 ![Dashboard Screenshot](./screenshots/dashboard.png)
+
+#### Announcements Feed Screenshot
 ![Announcements Feed Screenshot](./screenshots/announcements.png)
 
-Next.js TypeScript Tailwind Framer-Motion IoT-MQTT WebSockets
+**Next.js TypeScript Tailwind Framer-Motion IoT-MQTT WebSockets**
 
 ## 📋 Overview
 This project implements a comprehensive accessibility hub for public transport, specifically designed for the deaf and hard-of-hearing community. It operationalizes haptic controls, real-time sign language translation, and live transit telemetry to ensure that navigation and emergency alerts are fully auditable and compliant with EU accessibility mandates.
