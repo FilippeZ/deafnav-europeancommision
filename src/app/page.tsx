@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import BraceletStatus from "@/components/BraceletStatus";
 import LiveAnnouncements from "@/components/LiveAnnouncements";
@@ -12,30 +12,54 @@ import LandingPage from "@/components/LandingPage";
 const NAV_ITEMS = [
     { id: "dashboard", label: "Πίνακας Ελέγχου", icon: "dashboard" },
     { id: "vibration", label: "Ρυθμίσεις Δόνησης", icon: "bolt" },
-    { id: "history", label: "Ιστορικό", icon: "history" },
     { id: "navigation", label: "Πλοήγηση", icon: "map" },
     { id: "announcements", label: "Ανακοινώσεις", icon: "campaign" },
-    { id: "education", label: "Εκπαίδευση", icon: "play_circle" },
     { id: "community", label: "Κοινότητα", icon: "group" },
     { id: "support", label: "Υποστήριξη", icon: "support_agent" }
 ];
 
 // --- Sub-Components ---
 
-const DashboardView = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) => {
+const DashboardView = ({ setActiveTab, onSelectLine, selectedLang = "el" }: { setActiveTab: (tab: string) => void; onSelectLine?: (lineId: string) => void; selectedLang?: "en" | "el" }) => {
+    const isEn = selectedLang === "en";
+
+    const linesList = [
+        { id: "140", line: isEn ? "BUS 140" : "ΛΕΩΦΟΡΕΊΟ 140", direction: isEn ? "POLYGONO → GLYFADA" : "ΠΟΛΎΓΩΝΟ → ΓΛΥΦΆΔΑ", station: isEn ? "Syntagma Station" : "Σταθμός Συντάγματος", arrivalSecs: 342 },
+        { id: "040", line: isEn ? "EXPRESS 040" : "EXPRESS 040", direction: isEn ? "SYNTAGMA → LAVRIO" : "ΣΎΝΤΑΓΜΑ → ΛΑΎΡΙΟ", station: isEn ? "Faliro Station" : "Σταθμός Φαλήρου", arrivalSecs: 215 },
+        { id: "608", line: isEn ? "TROLLEY 608" : "ΤΡΌΛΕΪ 608", direction: isEn ? "ZOGRAFOU → THISEIO" : "ΖΩΓΡΆΦΟΥ → ΘΗΣΕΊΟ", station: isEn ? "Thiseio Station" : "Σταθμός Θησείου", arrivalSecs: 180 },
+        { id: "T6", line: isEn ? "TRAM T6" : "ΤΡΑΜ T6", direction: isEn ? "SYNTAGMA → PIKRODAFNI" : "ΣΎΝΤΑΓΜΑ → ΠΙΚΡΟΔΆΦΝΗ", station: isEn ? "Pikrodafni Station" : "Σταθμός Πικροδάφνης", arrivalSecs: 412 }
+    ];
+
+    const [activeLineIdx, setActiveLineIdx] = useState(0);
+    const currentLine = linesList[activeLineIdx];
+    const [secondsLeft, setSecondsLeft] = useState(currentLine.arrivalSecs);
+
     const [liveData, setLiveData] = useState({
-        line: "ΓΡΑΜΜΉ 2 (ΚΌΚΚΙΝΗ)",
-        direction: "ΕΛΛΗΝΙΚΌ",
-        nextArrival: "05:42",
-        station: "Σταθμός Συντάγματος",
         battery: 85,
-        bpm: 72,
-        bpmStatus: "✅ NORMAL BASELINE",
+        bpm: 75,
+        bpmStatus: isEn ? "✅ ✅ NORMAL BASELINE" : "✅ ✅ ΦΥΣΙΟΛΟΓΙΚΟΙ ΠΑΛΜΟΙ",
         connected: true
     });
 
     useEffect(() => {
-        // Fetch real IoT telemetry
+        setSecondsLeft(linesList[activeLineIdx].arrivalSecs);
+    }, [activeLineIdx]);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setSecondsLeft(prev => (prev > 1 ? prev - 1 : 360));
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, []);
+
+    const formatTime = (secs: number) => {
+        const mins = Math.floor(secs / 60);
+        const remSecs = secs % 60;
+        return `${mins.toString().padStart(2, '0')}:${remSecs.toString().padStart(2, '0')}`;
+    };
+
+    useEffect(() => {
         const fetchStatus = async () => {
             try {
                 const res = await fetch('/api/iot/status');
@@ -43,10 +67,10 @@ const DashboardView = ({ setActiveTab }: { setActiveTab: (tab: string) => void }
                     const data = await res.json();
                     setLiveData(prev => ({
                         ...prev,
-                        battery: data.battery,
-                        bpm: data.pulse,
-                        bpmStatus: data.stressLevel === 'Normal' ? "✅ NORMAL BASELINE" : "⚠️ HIGH STRESS",
-                        connected: data.connected
+                        battery: data.battery ?? 85,
+                        bpm: data.pulse ?? 75,
+                        bpmStatus: data.stressLevel === 'Normal' ? (isEn ? "✅ ✅ NORMAL BASELINE" : "✅ ✅ ΦΥΣΙΟΛΟΓΙΚΟΙ ΠΑΛΜΟΙ") : (isEn ? "⚠️ HIGH STRESS" : "⚠️ ΥΨΗΛΟ ΣΤΡΕΣ"),
+                        connected: data.connected ?? true
                     }));
                 }
             } catch (err) {
@@ -55,735 +79,459 @@ const DashboardView = ({ setActiveTab }: { setActiveTab: (tab: string) => void }
         };
 
         fetchStatus();
-        const iotInterval = setInterval(fetchStatus, 10000); // 10s poll
+        const iotInterval = setInterval(fetchStatus, 8000);
+        return () => clearInterval(iotInterval);
+    }, [isEn]);
 
-        // Simulate Next Arrival countdown
-        const arrivalInterval = setInterval(() => {
-            setLiveData(prev => ({
-                ...prev,
-                nextArrival: prev.nextArrival === "05:42" ? "05:41" : "05:42"
-            }));
-        }, 60000);
-
-        return () => {
-            clearInterval(iotInterval);
-            clearInterval(arrivalInterval);
-        };
-    }, []);
+    const handleNavigate = (lineId: string) => {
+        if (onSelectLine) onSelectLine(lineId);
+        setActiveTab("navigation");
+    };
 
     return (
-        <div className="relative p-6 lg:p-10 rounded-[50px] overflow-hidden shadow-[0_20px_50px_-12px_rgba(0,51,153,0.3)] border border-white/10 group">
-            {/* Full Dashboard Background Image */}
-            <div className="absolute inset-0 bg-slate-950 pointer-events-none z-0">
-                <motion.img
-                    src="/bracelet.jpeg"
-                    animate={{ scale: [1, 1.05, 1], opacity: [0.4, 0.6, 0.4] }}
-                    transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-                    className="w-full h-full object-cover mix-blend-overlay filter blur-[6px] group-hover:blur-[2px] transition-all duration-1000"
-                    alt="Dashboard Background"
-                />
-                <div className="absolute inset-0 bg-gradient-to-tr from-[#003399]/90 via-[#003399]/60 to-[#003399]/20" />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
-                <div className="lg:col-span-8 space-y-8">
-                    <section className="relative rounded-[40px] overflow-hidden border border-white/20 bg-white/5 backdrop-blur-md transition-transform duration-500 hover:scale-[1.01]">
-                        {/* Content container */}
-                        <div className="relative p-8 md:p-12 flex flex-col gap-10">
-                            {/* Status Header */}
-                            <div className="flex justify-between items-start">
-                                <div className="inline-flex items-center gap-2 px-6 py-2 bg-[#FFCC00] rounded-full shadow-[0_0_30px_rgba(255,204,0,0.4)]">
-                                    <span className="h-2 w-2 rounded-full bg-red-600 animate-pulse" />
-                                    <span className="text-xs font-[1000] text-[#003399] uppercase tracking-widest leading-none">
-                                        LIVE: {liveData.station}
-                                    </span>
-                                </div>
-                                <div className="text-white/60 font-black uppercase tracking-widest text-[10px] hidden md:block">
-                                    Status Bracelet Dashboard
-                                </div>
-                            </div>
-
-                            <div className="space-y-6">
-                                <div className="space-y-1">
-                                    <h1 className="text-3xl md:text-4xl font-black text-white/90 uppercase tracking-tight">
-                                        Επόμενη Άφιξη:
-                                    </h1>
-                                    <motion.h2
-                                        key={liveData.nextArrival}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className="text-[80px] md:text-[120px] font-black text-[#FFCC00] leading-none drop-shadow-2xl"
-                                    >
-                                        {liveData.nextArrival}
-                                    </motion.h2>
-                                </div>
-                                <p className="text-lg md:text-2xl font-black text-white uppercase tracking-wider opacity-90 max-w-2xl">
-                                    ΓΡΑΜΜΉ 2 (ΚΌΚΚΙΝΗ) - ΚΑΤΕΎΘΥΝΣΗ: ΕΛΛΗΝΙΚΌ
-                                </p>
-
-                                <button
-                                    onClick={() => setActiveTab("navigation")}
-                                    className="inline-flex items-center gap-3 bg-white/10 hover:bg-[#FFCC00] text-white hover:text-[#003399] backdrop-blur-md border border-white/20 hover:border-transparent px-8 py-4 rounded-full font-black text-sm uppercase tracking-widest transition-all duration-300 w-fit"
-                                >
-                                    <span className="material-symbols-outlined font-black">near_me</span>
-                                    ΠΛΉΡΕΣ ΔΡΟΜΟΛΌΓΙΟ
-                                </button>
-                            </div>
-
-                            {/* Telemetry info injected into the same card */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 border-t border-white/20">
-                                {/* Connectivity */}
-                                <div className="bg-white/10 backdrop-blur-md rounded-[30px] p-6 flex flex-col justify-between border border-white/10 hover:bg-white/20 transition-colors">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <span className="material-symbols-outlined text-[#FFCC00]">router</span>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-[#FFCC00]">Connectivity</span>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-2">
-                                            <span className={cn("material-symbols-outlined", liveData.connected ? "text-green-400" : "text-red-400")}>
-                                                {liveData.connected ? "check_circle" : "cancel"}
-                                            </span>
-                                            <h3 className="text-2xl font-black uppercase text-white">
-                                                {liveData.connected ? "Connected" : "Offline"}
-                                            </h3>
-                                        </div>
-                                        <p className={cn("text-xs font-bold uppercase tracking-widest", liveData.connected ? "text-green-400" : "text-red-400")}>
-                                            {liveData.connected ? "Active" : "Disconnected"}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Battery */}
-                                <div className="bg-white/10 backdrop-blur-md rounded-[30px] p-6 flex flex-col justify-between border border-white/10 hover:bg-white/20 transition-colors">
-                                    <div className="flex justify-between items-start mb-6">
-                                        <div className="flex items-center gap-3">
-                                            <span className="material-symbols-outlined text-[#FFCC00]">battery_charging_80</span>
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-[#FFCC00]">Μπαταρία</span>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-4">
-                                        <h3 className="text-4xl font-black uppercase text-white leading-none">
-                                            {liveData.battery}%
-                                        </h3>
-                                        <div className="w-full bg-white/20 h-2.5 rounded-full overflow-hidden">
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${liveData.battery}%` }}
-                                                transition={{ duration: 1 }}
-                                                className="bg-gradient-to-r from-green-400 to-green-500 h-full rounded-full"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* BPM */}
-                                <div className="bg-white/10 backdrop-blur-md rounded-[30px] p-6 flex flex-col justify-between border border-white/10 hover:bg-white/20 transition-colors">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <span className="material-symbols-outlined text-red-400">favorite</span>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-[#FFCC00]">Παλμοί</span>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div className="flex items-end gap-2">
-                                            <h3 className="text-4xl font-black uppercase text-white leading-none">
-                                                75
-                                            </h3>
-                                            <span className="text-sm font-black text-white/70 mb-1">BPM</span>
-                                        </div>
-                                        <p className="text-[10px] font-black text-[#FFCC00] uppercase tracking-widest">
-                                            ✅ ✅ NORMAL BASELINE
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
+        <div className="space-y-10">
+            {/* Top EU Protocol Header */}
+            <header className="bg-gradient-to-r from-[#001A4D] via-[#003399] to-[#001A4D] p-8 rounded-[35px] border-2 border-[#FFCC00]/40 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+                <div className="space-y-1 relative z-10">
+                    <div className="flex items-center gap-2">
+                        <span className="bg-[#FFCC00] text-[#003399] px-2.5 py-0.5 rounded text-[8px] font-[1000] uppercase tracking-wider italic">
+                            EU TRANSIT PROTOCOL
+                        </span>
+                        <span className="text-[9px] font-black text-green-400 bg-green-500/20 px-2.5 py-0.5 rounded-full border border-green-500/40 flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-ping" />
+                            {isEn ? "Live Telematics Active" : "Ζωντανή Τηλεματική Ενεργή"}
+                        </span>
+                    </div>
+                    <h2 className="text-3xl lg:text-5xl font-[1000] uppercase italic tracking-tighter text-white drop-shadow-md flex items-center gap-3">
+                        <span className="material-symbols-outlined text-4xl text-[#FFCC00]">dashboard</span>
+                        {isEn ? "DeafNav Status Dashboard" : "Πίνακας Ελέγχου DeafNav"}
+                    </h2>
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-300">
+                        {isEn ? "Status Bracelet Dashboard & Real-Time Accessible Transit Telemetry" : "Status Bracelet Dashboard & Τηλεματική Προσβάσιμης Μετακίνησης"}
+                    </p>
                 </div>
 
-                <div className="lg:col-span-4 space-y-8">
-                    <div className="bg-gradient-to-br from-[#003399] to-blue-900 rounded-[40px] p-10 text-white h-[450px] flex flex-col justify-between relative overflow-hidden shadow-2xl border border-blue-400/20 group hover:border-[#FFCC00]/50 transition-all duration-500">
-                        <div className="absolute -right-10 -bottom-10 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
-                            <span className="material-symbols-outlined text-[200px]">chat</span>
+                <div className="flex items-center gap-3 relative z-10">
+                    <button
+                        onClick={() => handleNavigate(currentLine.id)}
+                        className="flex items-center gap-2 px-6 py-3 bg-[#FFCC00] hover:bg-yellow-300 text-[#003399] rounded-2xl text-xs font-[1000] uppercase tracking-widest transition-all cursor-pointer shadow-xl shadow-[#FFCC00]/30 hover:scale-105"
+                    >
+                        <span className="material-symbols-outlined text-base">near_me</span>
+                        {isEn ? "FULL ROUTE SCHEDULE" : "ΠΛΉΡΕΣ ΔΡΟΜΟΛΌΓΙΟ"}
+                    </button>
+                </div>
+            </header>
+
+            {/* Main Layout Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                {/* Left Side: Station Arrival & IoT Telemetry Cards */}
+                <div className="lg:col-span-7 space-y-8">
+                    {/* Next Arrival Station Banner Card */}
+                    <div className="bg-gradient-to-br from-[#001A4D] via-[#003399] to-[#00153D] rounded-[45px] p-8 lg:p-10 border-4 border-[#FFCC00]/40 shadow-2xl space-y-6 text-white relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFCC00]/10 rounded-full blur-3xl pointer-events-none" />
+
+                        {/* Line Selector Buttons Bar */}
+                        <div className="flex flex-wrap items-center gap-2 relative z-10 border-b border-white/15 pb-4">
+                            {linesList.map((item, idx) => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setActiveLineIdx(idx)}
+                                    className={cn(
+                                        "px-4 py-2 rounded-2xl text-[10px] font-[1000] uppercase transition-all cursor-pointer border",
+                                        activeLineIdx === idx
+                                            ? "bg-[#FFCC00] text-[#003399] border-white shadow-lg shadow-[#FFCC00]/30 scale-105"
+                                            : "bg-[#002266]/70 text-white/80 border-white/20 hover:bg-white/10"
+                                    )}
+                                >
+                                    {item.line}
+                                </button>
+                            ))}
                         </div>
 
-                        <div>
-                            <div className="flex items-center gap-3 mb-6">
-                                <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-200 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-xs">chat</span> Υποστήριξη
-                                </h4>
+                        {/* Live Station Header */}
+                        <div className="flex justify-between items-start relative z-10 pt-2">
+                            <div className="inline-flex items-center gap-2.5 px-5 py-2 bg-[#FFCC00] rounded-full shadow-[0_0_25px_rgba(255,204,0,0.5)]">
+                                <span className="h-2.5 w-2.5 rounded-full bg-[#003399] animate-pulse" />
+                                <span className="text-xs font-[1000] text-[#003399] uppercase tracking-widest">
+                                    LIVE: {currentLine.station}
+                                </span>
                             </div>
-                            <h3 className="text-5xl font-[1000] uppercase tracking-tighter mb-4">
-                                Live Chat
+                            <span className="text-[10px] font-[1000] uppercase tracking-widest text-white/60 bg-white/10 px-4 py-1.5 rounded-full border border-white/10">
+                                Status Bracelet Dashboard
+                            </span>
+                        </div>
+
+                        {/* Real-time Ticking Arrival Display */}
+                        <div className="space-y-4 relative z-10">
+                            <h3 className="text-2xl lg:text-3xl font-[1000] italic text-white/90 uppercase tracking-tight">
+                                {isEn ? "Next Arrival:" : "Επόμενη Άφιξη:"}
                             </h3>
-                            <p className="text-lg font-medium text-white/80 leading-relaxed">
-                                Σύνδεση με εκπρόσωπο που γνωρίζει την νοηματική γλώσσα.
+                            <motion.h2
+                                key={secondsLeft}
+                                initial={{ opacity: 0.8, scale: 0.98 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.2 }}
+                                className="text-7xl lg:text-[110px] font-[1000] text-[#FFCC00] leading-none drop-shadow-[0_0_35px_rgba(255,204,0,0.5)] tracking-tighter italic font-mono"
+                            >
+                                {formatTime(secondsLeft)}
+                            </motion.h2>
+                            <p className="text-base lg:text-xl font-[1000] italic text-white uppercase tracking-wider opacity-90 leading-tight">
+                                {currentLine.line} - {isEn ? "DIRECTION:" : "ΚΑΤΕΎΘΥΝΣΗ:"} {currentLine.direction}
+                            </p>
+
+                            <button
+                                onClick={() => handleNavigate(currentLine.id)}
+                                className="inline-flex items-center gap-3 bg-[#FFCC00] hover:bg-yellow-300 text-[#003399] px-7 py-3.5 rounded-2xl font-[1000] text-xs uppercase tracking-widest transition-all duration-300 shadow-xl shadow-[#FFCC00]/30 hover:scale-105 cursor-pointer mt-2"
+                            >
+                                <span className="material-symbols-outlined font-black">near_me</span>
+                                {isEn ? "FULL ROUTE SCHEDULE" : "ΠΛΉΡΕΣ ΔΡΟΜΟΛΌΓΙΟ"}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* IoT Telemetry Metrics Cards Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        {/* Connectivity Card */}
+                        <div className="bg-gradient-to-br from-[#001E5C] to-[#00153D] p-6 rounded-[32px] border-2 border-[#FFCC00]/30 hover:border-[#FFCC00] transition-all shadow-xl space-y-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-[1000] uppercase tracking-widest text-[#FFCC00] flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm">router</span>
+                                    {isEn ? "Connectivity" : "Συνδεσιμότητα"}
+                                </span>
+                                <span className="material-symbols-outlined text-green-400 text-xl">check_circle</span>
+                            </div>
+                            <div className="space-y-1">
+                                <h4 className="text-2xl font-[1000] italic uppercase text-white">
+                                    {liveData.connected ? (isEn ? "Connected" : "Συνδεδεμένο") : (isEn ? "Offline" : "Εκτός σύνδεσης")}
+                                </h4>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-green-400">
+                                    {liveData.connected ? (isEn ? "Active" : "Ενεργό") : (isEn ? "Disconnected" : "Αποσυνδεδεμένο")}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Battery Telemetry Card */}
+                        <div className="bg-gradient-to-br from-[#001E5C] to-[#00153D] p-6 rounded-[32px] border-2 border-[#FFCC00]/30 hover:border-[#FFCC00] transition-all shadow-xl space-y-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-[1000] uppercase tracking-widest text-[#FFCC00] flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm">battery_charging_80</span>
+                                    {isEn ? "Battery" : "Μπαταρία"}
+                                </span>
+                                <span className="text-xs font-[1000] text-green-400">85%</span>
+                            </div>
+                            <div className="space-y-2">
+                                <h4 className="text-3xl font-[1000] italic uppercase text-white leading-none">
+                                    {liveData.battery}%
+                                </h4>
+                                <div className="w-full bg-black/40 h-3 rounded-full overflow-hidden border border-white/10">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${liveData.battery}%` }}
+                                        transition={{ duration: 1 }}
+                                        className="bg-gradient-to-r from-green-400 to-emerald-500 h-full rounded-full shadow-[0_0_10px_#4ade80]"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Heart Pulse Card */}
+                        <div className="bg-gradient-to-br from-[#001E5C] to-[#00153D] p-6 rounded-[32px] border-2 border-[#FFCC00]/30 hover:border-[#FFCC00] transition-all shadow-xl space-y-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-[1000] uppercase tracking-widest text-[#FFCC00] flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-sm text-red-400 animate-pulse">favorite</span>
+                                    {isEn ? "Heart Rate" : "Παλμοί"}
+                                </span>
+                            </div>
+                            <div className="space-y-1">
+                                <div className="flex items-baseline gap-2">
+                                    <h4 className="text-3xl font-[1000] italic uppercase text-white leading-none">
+                                        {liveData.bpm}
+                                    </h4>
+                                    <span className="text-sm font-black text-white/60">BPM</span>
+                                </div>
+                                <p className="text-[9px] font-[1000] uppercase text-[#FFCC00] tracking-widest mt-1">
+                                    {liveData.bpmStatus}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Side: Live Support & Live Announcements Panel */}
+                <div className="lg:col-span-5 space-y-8">
+                    {/* Live Support Banner */}
+                    <div className="bg-gradient-to-br from-[#001A4D] via-[#003399] to-[#00153D] rounded-[40px] p-8 border-4 border-[#FFCC00]/40 shadow-2xl text-white space-y-6 relative overflow-hidden group">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 bg-[#FFCC00] text-[#003399] px-3 py-1 rounded-full text-[9px] font-[1000] uppercase">
+                                <span className="material-symbols-outlined text-xs">chat</span>
+                                {isEn ? "Support" : "Υποστήριξη"}
+                            </div>
+                            <span className="text-[9px] font-black text-green-400 bg-green-500/20 px-3 py-1 rounded-full border border-green-500/30 flex items-center gap-1">
+                                <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+                                {isEn ? "Online Interpreter" : "Online Διερμηνέας"}
+                            </span>
+                        </div>
+
+                        <div className="space-y-2">
+                            <h3 className="text-3xl font-[1000] italic uppercase tracking-tight text-white">
+                                {isEn ? "Live Chat" : "Live Chat"}
+                            </h3>
+                            <p className="text-sm font-bold text-white/80 leading-relaxed">
+                                {isEn ? "Connect with an interpreter fluent in Sign Language." : "Σύνδεση με εκπρόσωπο που γνωρίζει την νοηματική γλώσσα."}
                             </p>
                         </div>
 
                         <button
                             onClick={() => setActiveTab("support")}
-                            className="flex items-center justify-between w-full bg-white/10 hover:bg-[#FFCC00] text-white hover:text-[#003399] backdrop-blur-md px-6 py-4 rounded-full font-black text-sm uppercase tracking-widest transition-all duration-300 group/btn"
+                            className="w-full bg-[#FFCC00] hover:bg-yellow-300 text-[#003399] py-4 rounded-2xl text-xs font-[1000] uppercase tracking-widest transition-all cursor-pointer shadow-xl shadow-[#FFCC00]/30 hover:scale-[1.02] flex items-center justify-center gap-2"
                         >
-                            <span>ΣΎΝΔΕΣΗ ΤΏΡΑ</span>
-                            <span className="material-symbols-outlined group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
+                            <span>{isEn ? "CONNECT NOW" : "ΣΎΝΔΕΣΗ ΤΏΡΑ"}</span>
+                            <span className="material-symbols-outlined text-sm">arrow_forward</span>
                         </button>
                     </div>
 
-                    {/* Embedded Live Announcements Component */}
-                    <LiveAnnouncements />
+                    {/* Embedded Live Transit Stream Panel */}
+                    <LiveAnnouncements selectedLang={selectedLang} />
                 </div>
-            </div >
-        </div >
+            </div>
+        </div>
     );
 };
 
-const VibrationView = () => {
+const VibrationView = ({ selectedLang = "el" }: { selectedLang?: "en" | "el" }) => {
+    const isEn = selectedLang === "en";
+
     const [intensity, setIntensity] = useState(75);
     const [isVibrating, setIsVibrating] = useState(false);
     const [activePattern, setActivePattern] = useState('Standard Guidance');
+    const [syncStatus, setSyncStatus] = useState(isEn ? "Connected" : "Συνδεδεμένο");
+
+    const updateIoT = async (newPattern: string, newIntensity: number) => {
+        try {
+            setSyncStatus(isEn ? "Syncing..." : "Συγχρονισμός...");
+            await fetch('/api/iot/status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ vibrationMode: newPattern, intensity: newIntensity })
+            });
+            setTimeout(() => setSyncStatus(isEn ? "Connected" : "Συνδεδεμένο"), 600);
+        } catch (err) {
+            console.error("Failed to sync vibration mode with IoT API", err);
+            setSyncStatus(isEn ? "Offline" : "Εκτός σύνδεσης");
+        }
+    };
+
+    const handlePatternChange = (pattern: string) => {
+        setActivePattern(pattern);
+        updateIoT(pattern, intensity);
+    };
+
+    const handleIntensityChange = (val: number) => {
+        setIntensity(val);
+        updateIoT(activePattern, val);
+    };
 
     const handleVibrate = () => {
         setIsVibrating(true);
+        updateIoT(activePattern, intensity);
+
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
             let pattern = [200];
             if (activePattern === 'Soft Pulse') pattern = [100, 50, 100];
             if (activePattern === 'Rapid Alert') pattern = [50, 50, 50, 50, 50];
             if (activePattern === 'Emergency SOS') pattern = [500, 200, 500, 200, 500];
 
-            // scale pattern duration by intensity roughly
-            pattern = pattern.map(p => p * (intensity / 100));
-            navigator.vibrate(pattern);
+            pattern = pattern.map(p => Math.round(p * (intensity / 100)));
+            try { navigator.vibrate(pattern); } catch (_) {}
         }
-        setTimeout(() => setIsVibrating(false), 2000);
+        setTimeout(() => setIsVibrating(false), 2500);
     };
 
-    return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <section className="glass rounded-[40px] p-12 space-y-10 border-l-[12px] border-[#FFCC00]">
-                <header className="space-y-2">
-                    <h2 className="text-4xl font-[1000] uppercase italic tracking-tighter text-[#003399] dark:text-[#FFCC00]">Ρυθμίσεις Δόνησης</h2>
-                    <p className="text-slate-500 font-bold text-lg uppercase italic tracking-tight">Configuration of tactile feedback intensity and patterns.</p>
-                </header>
-                <div className="space-y-8">
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-end">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Ένταση Δόνησης</label>
-                            <span className="text-3xl font-black italic text-[#003399] dark:text-white">{intensity}%</span>
-                        </div>
-                        <input type="range" value={intensity} onChange={(e) => setIntensity(parseInt(e.target.value))} className="w-full h-3 bg-slate-200 dark:bg-slate-800 rounded-full appearance-none cursor-pointer accent-[#003399]" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        {['Soft Pulse', 'Rapid Alert', 'Standard Guidance', 'Emergency SOS'].map((type) => (
-                            <button
-                                key={type}
-                                onClick={() => setActivePattern(type)}
-                                className={cn(
-                                    "glass py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-[#003399] transition-all italic",
-                                    activePattern === type && "bg-[#003399] text-white border-transparent"
-                                )}
-                            >
-                                {type}
-                            </button>
-                        ))}
-                    </div>
-                    <button
-                        onClick={handleVibrate}
-                        className="w-full bg-[#003399] py-6 rounded-3xl text-white font-black uppercase tracking-widest italic shadow-xl shadow-[#003399]/30 hover:scale-[1.02] active:scale-95 transition-all"
-                    >
-                        ΔΟΚΙΜΉ ΔΌΝΗΣΗΣ
-                    </button>
-                </div>
-            </section>
-            <section className="flex flex-col items-center justify-center space-y-8 relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#003399]/5 to-transparent rounded-[60px] -z-10" />
-                <motion.div
-                    animate={isVibrating ? { rotate: [0, -2, 2, -2, 2, 0], scale: [1, 1.05, 1] } : {}}
-                    transition={{ repeat: isVibrating ? Infinity : 0, duration: 0.1 }}
-                    className="relative"
-                >
-                    <div className="absolute -inset-8 bg-[#FFCC00]/20 blur-3xl rounded-full opacity-50" />
-                    <span className="material-symbols-outlined text-[200px] text-[#003399] dark:text-[#FFCC00] drop-shadow-2xl">watch_off</span>
-                    {isVibrating && (
-                        <div className="absolute -top-4 -right-4 flex gap-1">
-                            {[1, 2, 3].map(i => <div key={i} className="h-6 w-2 bg-[#FFCC00] rounded-full animate-bounce" style={{ animationDelay: `${i * 0.1}s` }} />)}
-                        </div>
-                    )}
-                </motion.div>
-                <div className="text-center space-y-2">
-                    <p className="text-2xl font-black italic uppercase tracking-tighter">{isVibrating ? "VIBRATION ACTIVE" : "DEVICE STANDBY"}</p>
-                    <div className="flex gap-2 justify-center">
-                        <span className="h-2 w-8 bg-[#003399] rounded-full" />
-                        <span className="h-2 w-8 bg-slate-200 dark:bg-slate-800 rounded-full" />
-                        <span className="h-2 w-8 bg-slate-200 dark:bg-slate-800 rounded-full" />
-                    </div>
-                </div>
-            </section>
-        </div>
-    );
-};
-
-const HistoryView = () => {
-    const [events, setEvents] = useState([
-        { id: 1, time: '17:30', type: 'Station Reach', station: 'Syntagma', desc: 'Arrived at Line 2 platform', status: 'COMPLETED' },
-        { id: 2, time: '17:15', type: 'Tactile Alert', station: 'Panepistimio', desc: '5min Delay Notification', status: 'ACKNOWLEDGED' },
-        { id: 3, time: '16:45', type: 'Emergency SOS', station: 'Omonia', desc: 'Video Call started', status: 'RESOLVED' },
-        { id: 4, time: '16:30', type: 'Telemetry Sync', station: 'N/A', desc: 'Pulse detected: 78 BPM', status: 'SYNCED' }
-    ]);
-    const [isDownloading, setIsDownloading] = useState(false);
-
-    const handleDownload = () => {
-        setIsDownloading(true);
-        setTimeout(() => setIsDownloading(false), 2000);
-    };
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (Math.random() > 0.6) {
-                const newEvent = {
-                    id: Date.now(),
-                    time: new Date().toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' }),
-                    type: Math.random() > 0.5 ? 'Connectivity' : 'System Check',
-                    station: ['Network', 'Gateway D', 'Node Alpha'][Math.floor(Math.random() * 3)],
-                    desc: 'Handshake completed successfully',
-                    status: 'SYNCED'
-                };
-                setEvents(prev => [newEvent, ...prev.slice(0, 9)]);
-            }
-        }, 8000);
-        return () => clearInterval(interval);
-    }, []);
-
-    return (
-        <div className="space-y-10">
-            <header className="flex justify-between items-end">
-                <div className="space-y-2">
-                    <h2 className="text-4xl font-[1000] uppercase italic tracking-tighter text-[#003399] dark:text-[#FFCC00]">Ιστορικό Συμβάντων</h2>
-                    <p className="text-slate-500 font-bold uppercase italic tracking-tight">Archive of received alerts and transit milestones.</p>
-                </div>
-                <button
-                    onClick={handleDownload}
-                    className={cn(
-                        "flex items-center gap-2 text-[10px] font-black uppercase pb-2 border-b-2 transition-all hover:scale-105 active:scale-95",
-                        isDownloading ? "text-green-500 border-green-500" : "text-[#003399] border-[#003399] dark:text-[#FFCC00] dark:border-[#FFCC00]"
-                    )}
-                >
-                    {isDownloading ? "DOWNLOADING..." : "ΚΑΤΈΒΑΣΜΑ PDF"}
-                    <span className={cn("material-symbols-outlined text-sm", isDownloading && "animate-bounce")}>
-                        {isDownloading ? "download_done" : "download"}
-                    </span>
-                </button>
-            </header>
-            <div className="glass rounded-[40px] overflow-hidden shadow-2xl border border-white/20 dark:border-white/5 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl">
-                <table className="w-full text-left">
-                    <thead className="bg-[#003399] text-white text-[10px] font-black uppercase tracking-widest h-16 border-b-4 border-[#FFCC00]">
-                        <tr>
-                            <th className="px-8 w-[15%]">Time</th>
-                            <th className="w-[20%]">Event Type</th>
-                            <th className="w-[20%]">Station</th>
-                            <th className="w-[30%]">Details</th>
-                            <th className="text-right px-8 w-[15%]">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody className="text-xs font-bold divide-y divide-slate-200 dark:divide-slate-800/50">
-                        <AnimatePresence>
-                            {events.map((row) => (
-                                <motion.tr
-                                    key={row.id}
-                                    initial={{ opacity: 0, x: -20, backgroundColor: 'rgba(255, 204, 0, 0.2)' }}
-                                    animate={{ opacity: 1, x: 0, backgroundColor: 'rgba(0,0,0,0)' }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.5 }}
-                                    className="h-20 hover:bg-white dark:hover:bg-white/5 transition-colors"
-                                >
-                                    <td className="px-8 font-black text-[#003399] dark:text-[#FFCC00]">{row.time}</td>
-                                    <td className="uppercase italic tracking-tighter text-slate-800 dark:text-slate-200">{row.type}</td>
-                                    <td className="font-black italic text-slate-600 dark:text-slate-400">{row.station}</td>
-                                    <td className="text-slate-500 dark:text-slate-400">{row.desc}</td>
-                                    <td className="px-8 text-right">
-                                        <span className={cn(
-                                            "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm whitespace-nowrap",
-                                            row.status === 'COMPLETED' ? "bg-green-100 text-green-700 border border-green-200" :
-                                                row.status === 'ACKNOWLEDGED' ? "bg-blue-100 text-blue-700 border border-blue-200" :
-                                                    row.status === 'RESOLVED' ? "bg-slate-200 text-slate-700 border border-slate-300" :
-                                                        "bg-[#FFCC00]/20 text-[#003399] dark:text-[#FFCC00] border border-[#FFCC00]/30"
-                                        )}>
-                                            {row.status}
-                                        </span>
-                                    </td>
-                                </motion.tr>
-                            ))}
-                        </AnimatePresence>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
-};
-
-const NavigationView = () => {
-    const [speed, setSpeed] = useState(0);
-    const [eta, setEta] = useState(0);
-    const [progress, setProgress] = useState(0);
-    const [activeVehicles, setActiveVehicles] = useState(0);
-
-    useEffect(() => {
-        const fetchTelemetry = async () => {
-            try {
-                // Tracking line 140 as a demo of the OASA Real-Time integration
-                const res = await fetch('/api/metro/vehicles?lineId=140');
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.activeCount > 0) {
-                        setSpeed(data.simulatedSpeed);
-                        setProgress(data.simulatedProgress);
-                        setActiveVehicles(data.activeCount);
-                        setEta(Math.max(0.5, 15 - (data.simulatedProgress / 10))); // Mocking ETA decrease based on progress 
-                    }
-                }
-            } catch (error) {
-                console.error("Failed fetching Live OASA Vehicle Telemetry", error);
-            }
-        };
-
-        fetchTelemetry(); // Initial fetch
-        const interval = setInterval(fetchTelemetry, 10000); // 10s poll rate for Telematics
-
-        return () => clearInterval(interval);
-    }, []);
-
-    return (
-        <div className="space-y-8">
-            <header className="flex justify-between items-center">
-                <h2 className="text-5xl font-[1000] uppercase italic tracking-tighter text-[#003399] dark:text-[#FFCC00]">Πλοήγηση Real-Time</h2>
-                <div className="flex gap-4">
-                    <span className="bg-[#003399] text-white px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm">wifi_tethering</span> OASA Bus GPS Lock
-                    </span>
-                    <span className="bg-[#FFCC00] text-[#003399] px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(255,204,0,0.5)] flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm">directions_bus</span> {activeVehicles} Buses Streaming
-                    </span>
-                </div>
-            </header>
-
-            <section className="bg-gradient-to-br from-[#003399] to-blue-950 rounded-[40px] p-12 text-white relative overflow-hidden shadow-2xl border-4 border-[#003399]/30 h-[500px] flex flex-col justify-between group">
-                {/* Simulated Radar Grid */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:20px_20px] opacity-30" />
-                <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
-                    className="absolute -top-1/2 -right-1/4 w-[800px] h-[800px] bg-gradient-to-b from-[#FFCC00]/5 to-transparent rounded-full blur-3xl"
-                />
-
-                <div className="relative z-10 flex justify-between items-start">
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#FFCC00] mb-2 animate-pulse flex items-center gap-2">
-                            <span className="material-symbols-outlined text-xs">directions_bus</span>
-                            OASA Bus Telemetry Active
-                        </p>
-                        <h3 className="text-6xl font-[1000] italic uppercase tracking-tighter leading-none mb-4 flex items-center gap-4">
-                            <span className="material-symbols-outlined text-5xl">directions_bus</span>
-                            Λεωφορείο <span className="text-[#FFCC00]">140</span>
-                        </h3>
-                        <p className="text-lg font-bold text-white/70 uppercase tracking-widest">
-                            Πολύγωνο - Γλυφάδα (OASA)
-                        </p>
-                    </div>
-
-                    <div className="text-right">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1">Live Speed (km/h)</p>
-                        <p className="text-6xl font-[1000] text-[#FFCC00] italic tracking-tighter drop-shadow-lg">
-                            {speed} <span className="text-2xl text-white/60">km/h</span>
-                        </p>
-                    </div>
-                </div>
-
-                <div className="relative z-10 text-center space-y-2 mt-auto">
-                    <p className="text-[12px] font-black uppercase tracking-[0.2em] text-[#FFCC00]">Estimated Time of Arrival</p>
-                    <p className="text-[120px] font-[1000] leading-none tracking-tighter italic drop-shadow-2xl">
-                        {eta.toFixed(1)}<span className="text-5xl text-white/50 italic">m</span>
-                    </p>
-                </div>
-
-                {/* Progress Pipeline */}
-                <div className="relative h-24 flex items-center mt-12 bg-black/40 rounded-[30px] p-6 backdrop-blur-md border border-white/10 shadow-inner">
-                    <div className="absolute inset-0 flex items-center px-12">
-                        <div className="w-full h-3 bg-white/20 rounded-full relative overflow-hidden shadow-inner">
-                            <motion.div
-                                className="absolute top-0 left-0 bottom-0 bg-gradient-to-r from-[#FFCC00]/50 to-[#FFCC00] shadow-[0_0_20px_#FFCC00] rounded-full"
-                                animate={{ width: `${progress}%` }}
-                                transition={{ ease: "easeInOut", duration: 1.5 }}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="w-full flex justify-between relative px-8 text-[11px] font-[1000] uppercase italic tracking-widest text-white/50">
-                        {['Starting Depot', 'Athinon', 'Syntagma', 'Glyfada HQ'].map((station, idx) => (
-                            <div key={idx} className="flex flex-col items-center gap-2 z-10">
-                                <span className={cn(
-                                    "w-5 h-5 rounded-full border-4 border-black transition-colors duration-500 shadow-xl",
-                                    progress >= (idx * 33.3) ? "bg-[#FFCC00] scale-125" : "bg-white/20"
-                                )} />
-                                <span className={cn(
-                                    "transition-colors duration-500",
-                                    progress >= (idx * 33.3) ? "text-[#FFCC00] drop-shadow-[0_0_10px_#FFCC00]" : "text-white/40"
-                                )}>{station}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-        </div>
-    );
-};
-
-const EducationView = () => {
-    const images = [
-        { src: "/images/eu/0610_Strasbourg_Gabrielle-Ferrandi2.jpg", title: "Strasbourg - Connect" },
-        { src: "/images/eu/0710_Paris_Gabrielle-Ferrandi.jpg", title: "Paris - Mobility" },
-        { src: "/images/eu/map.jpg", title: "EU Rail Network" }
+    const patterns = [
+        { id: "Soft Pulse", label: isEn ? "Soft Pulse" : "Ήπιος Παλμός", desc: isEn ? "Mild 100ms haptic guidance" : "Ήπιος παλμός 100ms για καθοδήγηση", icon: "waves" },
+        { id: "Rapid Alert", label: isEn ? "Rapid Alert" : "Γρήγορη Ειδοποίηση", desc: isEn ? "Fast 50ms alert bursts" : "Γρήγορες παλμικές ειδοποιήσεις 50ms", icon: "bolt" },
+        { id: "Standard Guidance", label: isEn ? "Standard Guidance" : "Τυπική Καθοδήγηση", desc: isEn ? "Balanced 200ms transit pulse" : "Ισορροπημένη δόνηση 200ms για μετακίνηση", icon: "navigation" },
+        { id: "Emergency SOS", label: isEn ? "Emergency SOS" : "Έκτακτη Ανάγκη SOS", desc: isEn ? "Intense 500ms repeated alerts" : "Έντονη δόνηση 500ms έκτακτης ανάγκης", icon: "warning" }
     ];
-    const [index, setIndex] = useState(0);
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setIndex((prevIndex) => (prevIndex + 1) % images.length);
-        }, 5000);
-        return () => clearInterval(interval);
-    }, [images.length]);
 
     return (
-        <div className="space-y-12">
-            <div className="flex flex-col items-center justify-center pt-8 space-y-4">
-                <span className="material-symbols-outlined text-6xl text-[#003399] dark:text-[#FFCC00] bg-white/10 p-6 rounded-full shadow-2xl backdrop-blur-xl border border-white/20">school</span>
-                <h2 className="text-5xl font-[1000] uppercase italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-[#003399] to-blue-500 dark:from-[#FFCC00] dark:to-yellow-200">
-                    European Union 2021
-                </h2>
-                <div className="h-1.5 w-40 bg-[#FFCC00] rounded-full" />
-                <p className="text-xl font-bold uppercase italic text-slate-500">The European Year of Rail</p>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            {/* Left Column: Controls & Configuration */}
+            <div className="lg:col-span-7 space-y-8">
+                <section className="bg-gradient-to-br from-[#001A4D] via-[#003399] to-[#00153D] rounded-[45px] p-8 lg:p-10 border-4 border-[#FFCC00]/40 shadow-2xl space-y-8 text-white relative overflow-hidden">
+                    {/* EU Background Star Glow */}
+                    <div className="absolute top-0 right-0 w-48 h-48 bg-[#FFCC00]/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="lg:col-span-12">
-                <div className="relative h-full min-h-[500px] rounded-[40px] overflow-hidden shadow-2xl border-4 border-white dark:border-slate-800">
-                    <AnimatePresence mode="wait">
-                        <motion.img
-                            key={index}
-                            src={images[index].src}
-                            initial={{ opacity: 0, scale: 1.1 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            transition={{ duration: 0.8 }}
-                            className="absolute inset-0 w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700"
-                        />
-                    </AnimatePresence>
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#003399] via-transparent to-transparent flex flex-col justify-end p-12">
-                        <motion.div
-                            key={index + "text"}
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            className="bg-white/10 backdrop-blur-md p-6 rounded-3xl border border-white/20"
-                        >
-                            <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-1">{images[index].title}</h3>
-                            <p className="text-[#FFCC00] font-black text-[10px] uppercase tracking-[0.2em]">EU Horizon 2021 Initiative</p>
-                        </motion.div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const CommunityView = () => {
-    const [posts, setPosts] = useState([
-        { title: 'Συνάντηση Κοινότητας', user: 'Μαρία Κ.', time: '2 ώρες πριν', icon: 'groups', img: 'https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=2070&auto=format&fit=crop' },
-        { title: 'Νέος Οδηγός Πλοήγησης', user: 'Γιώργος Π.', time: '5 ώρες πριν', icon: 'school', img: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=2070&auto=format&fit=crop' },
-        { title: 'Πρόβλημα στο Μετρό', user: 'Άννα Λ.', time: '1 μέρα πριν', icon: 'report', img: 'https://images.unsplash.com/photo-1513682121497-80211f36a790?q=80&w=2072&auto=format&fit=crop' },
-        { title: 'Feedback Συσκευής', user: 'Κώστας Δ.', time: '2 μέρες πριν', icon: 'rate_review', img: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop' }
-    ]);
-
-    useEffect(() => {
-        // Simulating data fetch for community updates
-        const fetchCommunity = async () => {
-            // Let's dynamically add a new 'Live' item occasionally to simulate real-time
-            if (Math.random() > 0.8) {
-                setPosts(prev => [{
-                    title: 'Live Q&A Webinar',
-                    user: 'OASA Support',
-                    time: 'Μόλις τώρα',
-                    icon: 'live_tv',
-                    img: 'https://images.unsplash.com/photo-1593642532400-2682810df593?q=80&w=2069&auto=format&fit=crop'
-                }, ...prev.slice(0, 3)]);
-            }
-        };
-        const interval = setInterval(fetchCommunity, 15000);
-        return () => clearInterval(interval);
-    }, []);
-
-    return (
-        <div className="space-y-8">
-            <header className="flex justify-between items-end">
-                <div className="space-y-2">
-                    <h2 className="text-4xl font-[1000] uppercase italic tracking-tighter text-[#003399]">DeafNav Community</h2>
-                    <p className="text-slate-500 font-bold uppercase italic tracking-tight">Connect, share feedback, and learn together.</p>
-                </div>
-                <button className="bg-[#FFCC00] text-[#003399] px-6 py-3 rounded-full font-black uppercase tracking-widest text-xs hover:bg-[#003399] hover:text-[#FFCC00] transition-colors shadow-lg">
-                    Νέο Post <span className="material-symbols-outlined align-middle ml-1 text-sm">add</span>
-                </button>
-            </header>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <AnimatePresence>
-                    {posts.map((item, i) => (
-                        <motion.div
-                            key={item.title + item.time}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            transition={{ duration: 0.4 }}
-                            className="glass rounded-[30px] p-6 space-y-4 group hover:border-[#003399] transition-all cursor-pointer shadow-xl relative overflow-hidden"
-                        >
-                            <div className="h-48 bg-slate-900 rounded-2xl flex items-center justify-center relative overflow-hidden">
-                                <img src={item.img} alt={item.title} className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                                <span className="material-symbols-outlined text-5xl text-white relative z-10 drop-shadow-2xl group-hover:scale-125 transition-transform">{item.icon}</span>
-                            </div>
-                            <div className="space-y-1 relative z-10">
-                                <h3 className="font-black uppercase italic text-[#003399] dark:text-white leading-tight line-clamp-2">{item.title}</h3>
-                                <div className="flex items-center gap-2 mt-2">
-                                    <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black">{item.user[0]}</div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase">{item.user} • {item.time}</p>
-                                </div>
-                            </div>
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
-            </div>
-        </div>
-    );
-};
-
-const SupportView = () => {
-    const [messages, setMessages] = useState([
-        { id: 1, sender: 'ΓΕΝΙΚΉ ΥΠΟΣΤΉΡΙΞΗ', text: 'Γεια σας! Πώς μπορούμε να σας βοηθήσουμε σήμερα;', isUser: false },
-        { id: 2, sender: 'ΕΣΕΊΣ', text: 'Θα ήθελα πληροφορίες για την προσβασιμότητα στον σταθμό Ομόνοια.', isUser: true }
-    ]);
-    const [input, setInput] = useState('');
-    const [isCalling, setIsCalling] = useState(false);
-
-    const handleSend = () => {
-        if (!input.trim()) return;
-
-        // Add user message
-        const newMsg = { id: Date.now(), sender: 'ΕΣΕΊΣ', text: input, isUser: true };
-        setMessages(prev => [...prev, newMsg]);
-        setInput('');
-
-        // Simulate reply
-        setTimeout(() => {
-            setMessages(prev => [...prev, {
-                id: Date.now() + 1,
-                sender: 'ΥΠΟΣΤΉΡΙΞΗ',
-                text: 'Ευχαριστούμε για το μήνυμά σας. Ένας εκπρόσωπος συνδέεται τώρα για να σας εξυπηρετήσει στη νοηματική.',
-                isUser: false
-            }]);
-        }, 1500);
-    };
-
-    return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            <div className="lg:col-span-2 space-y-8">
-                <header className="space-y-2">
-                    <h2 className="text-4xl font-[1000] uppercase italic tracking-tighter text-[#003399]">Κέντρο Υποστήριξης</h2>
-                    <p className="text-slate-500 font-bold text-lg uppercase italic">Live sign-language video assistance and SOS support.</p>
-                </header>
-                <div className="aspect-video bg-slate-900 rounded-[40px] overflow-hidden relative border-4 border-[#003399]/20 shadow-2xl group">
-                    <img
-                        src={isCalling ? "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=2076&auto=format&fit=crop" : "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=2070&auto=format&fit=crop"}
-                        className={cn("w-full h-full object-cover transition-opacity duration-1000", isCalling ? "opacity-100" : "opacity-30")}
-                        alt="Video Feed"
-                    />
-
-                    {!isCalling ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center space-y-8 bg-black/40 backdrop-blur-sm">
-                            <button
-                                onClick={() => setIsCalling(true)}
-                                className="w-32 h-32 bg-red-600 hover:bg-red-500 rounded-full flex flex-col items-center justify-center animate-pulse shadow-[0_0_50px_rgba(220,38,38,0.6)] hover:scale-110 transition-all cursor-pointer"
-                            >
-                                <span className="material-symbols-outlined text-5xl text-white mb-1">videocam</span>
-                                <span className="text-white text-[10px] font-black tracking-widest uppercase">SOS CALL</span>
-                            </button>
-                            <p className="text-white font-black uppercase italic tracking-widest text-xl drop-shadow-md text-center max-w-sm">
-                                Πατήστε για άμεση κλήση έκτακτης ανάγκης με βίντεο.
-                            </p>
+                    <header className="space-y-2 border-b border-white/15 pb-6">
+                        <div className="flex items-center gap-2">
+                            <span className="bg-[#FFCC00] text-[#003399] px-2.5 py-0.5 rounded text-[8px] font-[1000] uppercase tracking-wider italic">
+                                EU ACCESSIBLE WEARABLE PROTOCOL
+                            </span>
+                            <span className="text-[9px] font-black text-sky-300 bg-sky-500/20 px-2.5 py-0.5 rounded-full border border-sky-400/30">
+                                IoT Sync: {syncStatus}
+                            </span>
                         </div>
-                    ) : (
-                        <div className="absolute inset-0 flex flex-col justify-between p-8 bg-gradient-to-t from-black/80 via-transparent to-black/40">
-                            <div className="flex justify-between items-start">
-                                <div className="flex items-center gap-3 bg-red-600/90 backdrop-blur-md px-4 py-2 rounded-full border border-red-500/50">
-                                    <span className="h-3 w-3 rounded-full bg-white animate-pulse" />
-                                    <span className="text-white text-xs font-black uppercase tracking-widest">Live SOS Connection</span>
-                                </div>
-                                <span className="material-symbols-outlined text-white text-4xl drop-shadow-xl animate-pulse">record_voice_over</span>
-                            </div>
-                            <div className="flex justify-center">
-                                <button
-                                    onClick={() => setIsCalling(false)}
-                                    className="bg-red-600 hover:bg-red-700 text-white rounded-full p-6 shadow-2xl hover:scale-110 transition-all border-4 border-white/20"
-                                >
-                                    <span className="material-symbols-outlined text-4xl">call_end</span>
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-            <div className="space-y-8">
-                <section className="bg-gradient-to-b from-[#003399] to-blue-900 p-8 rounded-[40px] text-white space-y-6 shadow-2xl h-[600px] flex flex-col">
-                    <header className="flex justify-between items-center border-b border-white/10 pb-4">
-                        <h3 className="text-2xl font-black italic uppercase tracking-tight flex items-center gap-3">
-                            <span className="material-symbols-outlined text-[#FFCC00]">chat</span>
-                            Live Chat
-                        </h3>
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-green-400 uppercase tracking-widest">
-                            <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" /> Online
-                        </div>
+                        <h2 className="text-4xl lg:text-5xl font-[1000] uppercase italic tracking-tighter text-white drop-shadow-md flex items-center gap-3">
+                            <span className="material-symbols-outlined text-4xl text-[#FFCC00]">bolt</span>
+                            {isEn ? "Vibration Settings" : "Ρυθμίσεις Δόνησης"}
+                        </h2>
+                        <p className="text-xs font-bold uppercase tracking-widest text-white/70">
+                            {isEn ? "Configuration of tactile feedback intensity and patterns." : "Ρύθμιση έντασης και μοτίβων απτικής ανατροφοδότησης."}
+                        </p>
                     </header>
 
-                    <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar flex flex-col justify-end">
-                        <AnimatePresence>
-                            {messages.map((msg) => (
-                                <motion.div
-                                    key={msg.id}
-                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    className={cn(
-                                        "p-4 rounded-2xl text-sm max-w-[85%]",
-                                        msg.isUser ? "bg-[#FFCC00] text-[#003399] self-end rounded-tr-sm" : "bg-white/10 backdrop-blur-md self-start rounded-tl-sm border border-white/10"
-                                    )}
-                                >
-                                    <p className="opacity-60 mb-1 text-[10px] font-black uppercase tracking-widest">
-                                        {msg.sender}
-                                    </p>
-                                    <p className="font-medium leading-snug">{msg.text}</p>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
+                    {/* Intensity Range Slider */}
+                    <div className="bg-[#002266]/70 backdrop-blur-xl p-6 rounded-3xl border-2 border-[#FFCC00]/30 space-y-4 shadow-xl">
+                        <div className="flex justify-between items-center">
+                            <label className="text-xs font-[1000] uppercase tracking-widest text-[#FFCC00] flex items-center gap-2">
+                                <span className="material-symbols-outlined text-sm">tune</span>
+                                {isEn ? "Vibration Intensity (Haptic Power)" : "Ένταση Δόνησης (Haptic Power)"}
+                            </label>
+                            <span className="text-4xl font-[1000] italic text-[#FFCC00] tracking-tighter drop-shadow-lg">
+                                {intensity}%
+                            </span>
+                        </div>
+
+                        <input
+                            type="range"
+                            min="10"
+                            max="100"
+                            value={intensity}
+                            onChange={(e) => handleIntensityChange(parseInt(e.target.value))}
+                            className="w-full h-4 bg-black/50 rounded-full appearance-none cursor-pointer accent-[#FFCC00] border border-white/20 shadow-inner"
+                        />
+
+                        <div className="flex justify-between text-[9px] font-black uppercase text-white/50 tracking-widest px-1">
+                            <span>10% {isEn ? "Low Tactile" : "Ήπια Δόνηση"}</span>
+                            <span>50% {isEn ? "Medium" : "Μεσαία"}</span>
+                            <span>100% {isEn ? "Maximum SOS" : "Μέγιστο SOS"}</span>
+                        </div>
                     </div>
 
-                    <div className="relative mt-auto pt-4 border-t border-white/10">
-                        <input
-                            type="text"
-                            placeholder="Πληκτρολογήστε εδώ..."
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                            className="w-full bg-white/10 border border-white/20 focus:border-[#FFCC00] rounded-2xl px-5 py-4 text-sm placeholder:text-white/40 outline-none transition-all"
-                        />
-                        <button
-                            onClick={handleSend}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 mt-2 bg-[#FFCC00] text-[#003399] p-2 rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg"
+                    {/* Vibration Pattern Buttons Grid */}
+                    <div className="space-y-3">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FFCC00] flex items-center gap-1.5 px-1">
+                            <span className="material-symbols-outlined text-sm">graphic_eq</span>
+                            {isEn ? "Select Haptic Tactile Pattern" : "Επιλογή Μοτίβου Απτικής Δόνησης"}
+                        </span>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {patterns.map((p) => {
+                                const isSelected = activePattern === p.id;
+                                return (
+                                    <button
+                                        key={p.id}
+                                        onClick={() => handlePatternChange(p.id)}
+                                        className={cn(
+                                            "flex flex-col justify-between p-5 rounded-3xl transition-all duration-300 cursor-pointer text-left relative overflow-hidden border-2",
+                                            isSelected
+                                                ? "bg-gradient-to-br from-[#003399] via-[#002266] to-[#001A4D] text-white border-[#FFCC00] shadow-[0_0_25px_rgba(255,204,0,0.4)] scale-[1.02]"
+                                                : "bg-[#001e5c]/80 hover:bg-[#002b80] text-white/90 border-[#FFCC00]/20 hover:border-[#FFCC00]/60 shadow-md"
+                                        )}
+                                    >
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className={cn(
+                                                "p-2 rounded-xl flex items-center justify-center shadow-md",
+                                                isSelected ? "bg-[#FFCC00] text-[#003399]" : "bg-[#003399] text-[#FFCC00] border border-[#FFCC00]/30"
+                                            )}>
+                                                <span className="material-symbols-outlined text-lg">{p.icon}</span>
+                                            </div>
+                                            {isSelected && (
+                                                <span className="text-[8px] font-[1000] uppercase bg-[#FFCC00] text-[#003399] px-2 py-0.5 rounded-full">
+                                                    {isEn ? "Active" : "Ενεργό"}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-0.5">
+                                            <h4 className="text-base font-[1000] italic uppercase tracking-tight text-white">
+                                                {p.label}
+                                            </h4>
+                                            <p className="text-[10px] font-bold text-white/70 leading-tight">
+                                                {p.desc}
+                                            </p>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Test Vibration Action Button */}
+                    <button
+                        onClick={handleVibrate}
+                        className="w-full bg-gradient-to-r from-[#FFCC00] via-yellow-300 to-[#FFCC00] hover:bg-yellow-300 text-[#003399] py-5 rounded-3xl text-sm font-[1000] uppercase tracking-widest italic shadow-[0_0_30px_rgba(255,204,0,0.5)] hover:scale-[1.02] active:scale-95 transition-all cursor-pointer border-2 border-white flex items-center justify-center gap-3"
+                    >
+                        <span className={cn("material-symbols-outlined text-xl", isVibrating && "animate-bounce")}>
+                            {isVibrating ? "vibration" : "bolt"}
+                        </span>
+                        {isVibrating ? (isEn ? "VIBRATING DEVICE..." : "ΣΥΣΚΕΥΗ ΣΕ ΔΟΝΗΣΗ...") : (isEn ? "TEST VIBRATION" : "ΔΟΚΙΜΉ ΔΌΝΗΣΗΣ")}
+                    </button>
+                </section>
+            </div>
+
+            {/* Right Column: Smartwatch Simulator HUD */}
+            <div className="lg:col-span-5 flex flex-col justify-center items-center">
+                <section className="bg-gradient-to-br from-[#001A4D] via-[#002266] to-[#00153D] rounded-[45px] p-8 lg:p-10 border-4 border-[#FFCC00]/40 shadow-2xl w-full flex flex-col items-center justify-center space-y-8 relative overflow-hidden min-h-[550px]">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,204,0,0.1)_1px,transparent_1px)] bg-[length:24px_24px] opacity-40 pointer-events-none" />
+
+                    <div className="text-center space-y-1 relative z-10">
+                        <span className="text-[10px] font-[1000] uppercase text-[#FFCC00] tracking-[0.2em]">
+                            Wearable Device HUD Simulator
+                        </span>
+                        <h3 className="text-2xl font-[1000] italic uppercase text-white tracking-tight">
+                            DeafNav Smart Bracelet
+                        </h3>
+                    </div>
+
+                    {/* Animated Smart Watch & Radial Haptic Wave Ring */}
+                    <div className="relative flex items-center justify-center my-6">
+                        {/* Radiating Haptic Pulsing Rings when Vibrating */}
+                        {isVibrating && (
+                            <>
+                                <motion.div
+                                    animate={{ scale: [1, 2.2], opacity: [0.8, 0] }}
+                                    transition={{ duration: 1, repeat: Infinity }}
+                                    className="absolute w-44 h-44 rounded-full border-4 border-[#FFCC00] bg-[#FFCC00]/20 pointer-events-none"
+                                />
+                                <motion.div
+                                    animate={{ scale: [1, 1.8], opacity: [0.6, 0] }}
+                                    transition={{ duration: 1, repeat: Infinity, delay: 0.3 }}
+                                    className="absolute w-44 h-44 rounded-full border-4 border-sky-400 bg-sky-500/20 pointer-events-none"
+                                />
+                            </>
+                        )}
+
+                        <motion.div
+                            animate={isVibrating ? { rotate: [-4, 4, -4, 4, 0], scale: [1, 1.08, 1] } : {}}
+                            transition={{ repeat: isVibrating ? Infinity : 0, duration: 0.12 }}
+                            className="relative z-10 p-8 bg-[#00153D] rounded-full border-4 border-[#FFCC00] shadow-[0_0_40px_rgba(255,204,0,0.4)] flex flex-col items-center justify-center"
                         >
-                            <span className="material-symbols-outlined text-sm">send</span>
-                        </button>
+                            <span className="material-symbols-outlined text-[110px] text-[#FFCC00] drop-shadow-2xl">
+                                {isVibrating ? "vibration" : "watch_off"}
+                            </span>
+                        </motion.div>
+                    </div>
+
+                    {/* Status Text & Pattern Info */}
+                    <div className="text-center space-y-3 relative z-10 w-full max-w-xs">
+                        <div className="bg-black/50 p-4 rounded-2xl border border-white/10 space-y-1">
+                            <p className="text-xl font-[1000] italic uppercase tracking-tighter text-[#FFCC00]">
+                                {isVibrating ? "VIBRATION ACTIVE" : "DEVICE STANDBY"}
+                            </p>
+                            <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest">
+                                Pattern: <span className="text-white">{activePattern}</span>
+                            </p>
+                            <p className="text-[9px] font-mono text-green-400 uppercase">
+                                Power Output: {intensity}% • Frequency Sync OK
+                            </p>
+                        </div>
+
+                        <div className="flex gap-2 justify-center pt-2">
+                            <span className={cn("h-2.5 rounded-full transition-all duration-300", isVibrating ? "w-10 bg-[#FFCC00] shadow-[0_0_10px_#FFCC00]" : "w-6 bg-white/20")} />
+                            <span className={cn("h-2.5 rounded-full transition-all duration-300", isVibrating ? "w-10 bg-[#FFCC00] shadow-[0_0_10px_#FFCC00]" : "w-6 bg-white/20")} />
+                            <span className={cn("h-2.5 rounded-full transition-all duration-300", isVibrating ? "w-10 bg-[#FFCC00] shadow-[0_0_10px_#FFCC00]" : "w-6 bg-white/20")} />
+                        </div>
                     </div>
                 </section>
             </div>
@@ -791,149 +539,891 @@ const SupportView = () => {
     );
 };
 
-const AnnouncementsView = () => {
-    const [transcript, setTranscript] = useState("Awaiting video stream...");
-    const [isTranslating, setIsTranslating] = useState(false);
 
-    const handleTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
-        const time = (e.currentTarget as HTMLVideoElement).currentTime;
 
-        // Define timestamped English sentences for the sign language translation
-        const sentences = [
-            { start: 1, end: 4, text: "Connecting Europe Facility - Supporting sustainable infrastructure." },
-            { start: 5, end: 9, text: "Investing in the Trans-European Transport Network (TEN-T)." },
-            { start: 10, end: 14, text: "Promoting cleaner energy and digital connectivity." },
-            { start: 15, end: 20, text: "Building a smarter, more resilient European Union." }
-        ];
+const NavigationView = ({ initialLine = "140", selectedLang = "el" }: { initialLine?: string; selectedLang?: "en" | "el" }) => {
+    const isEn = selectedLang === "en";
+    const [selectedLine, setSelectedLine] = useState(initialLine);
+    const [speed, setSpeed] = useState(48);
+    const [eta, setEta] = useState(11.2);
 
-        let activeTranslation = false;
-
-        for (let i = 0; i < sentences.length; i++) {
-            const s = sentences[i];
-
-            if (time >= s.start && time <= s.end) {
-                activeTranslation = true;
-                // Calculate progress through this specific sentence
-                const progress = (time - s.start) / (s.end - s.start);
-
-                // Split sentence into words and reveal them progressively based on time elapsed
-                const words = s.text.split(" ");
-                const wordsToShow = Math.max(1, Math.floor(words.length * progress));
-                const currentText = words.slice(0, wordsToShow).join(" ");
-
-                // Add a trailing ellipsis while translating to simulate streaming
-                setTranscript(currentText + (progress < 0.95 ? "..." : ""));
-                break;
-            } else if (time > s.end && time < (sentences[i + 1]?.start || s.end + 2)) {
-                // Keep the completed sentence on screen briefly before the next one starts
-                setTranscript(s.text);
-                activeTranslation = false;
-                break;
-            } else {
-                setTranscript("");
-            }
+    useEffect(() => {
+        if (initialLine) {
+            setSelectedLine(initialLine);
+            fetchTelemetry(initialLine);
         }
+    }, [initialLine]);
+    const [progress, setProgress] = useState(42);
+    const [activeVehicles, setActiveVehicles] = useState(5);
+    const [lineName, setLineName] = useState(isEn ? "Bus 140" : "Λεωφορείο 140");
+    const [route, setRoute] = useState(isEn ? "Polygono → Glyfada (OASA)" : "Πολύγωνο → Γλυφάδα (OASA)");
+    const [stops, setStops] = useState(["Πολύγωνο Depot", "Λεωφ. Αθηνών", "Σύνταγμα", "Γλυφάδα HQ"]);
+    const [latOrigin, setLatOrigin] = useState("37.9838° N");
+    const [lngOrigin, setLngOrigin] = useState("23.7275° E");
+    const [latencyMs, setLatencyMs] = useState(12);
+    const [activeStopIndex, setActiveStopIndex] = useState(1);
 
-        setIsTranslating(activeTranslation);
+    const fetchTelemetry = async (lineId: string) => {
+        try {
+            const res = await fetch(`/api/metro/vehicles?lineId=${lineId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setSpeed(data.simulatedSpeed ?? 48);
+                setProgress(data.simulatedProgress ?? 42);
+                setActiveVehicles(data.activeCount ?? 5);
+                setLineName(data.lineName ?? (isEn ? `Bus ${lineId}` : `Λεωφορείο ${lineId}`));
+                setRoute(data.route ?? (isEn ? "Polygono → Glyfada" : "Πολύγωνο → Γλυφάδα"));
+                if (data.stops?.length) setStops(data.stops);
+                if (data.latOrigin) setLatOrigin(data.latOrigin);
+                if (data.lngOrigin) setLngOrigin(data.lngOrigin);
+                if (data.latencyMs) setLatencyMs(data.latencyMs);
+
+                const remainingProg = Math.max(5, 100 - (data.simulatedProgress ?? 42));
+                setEta(parseFloat((remainingProg / 7.5).toFixed(1)));
+            }
+        } catch (error) {
+            console.error("Failed fetching Live OASA Vehicle Telemetry", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchTelemetry(selectedLine);
+        const interval = setInterval(() => fetchTelemetry(selectedLine), 8000);
+        return () => clearInterval(interval);
+    }, [selectedLine]);
+
+    const handleLineSelect = (lineId: string) => {
+        setSelectedLine(lineId);
+        fetchTelemetry(lineId);
     };
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            <div className="lg:col-span-8 space-y-8">
-                <header className="flex items-center justify-between">
-                    <div className="space-y-2">
-                        <h2 className="text-6xl font-[1000] uppercase italic tracking-tighter text-[#003399] dark:text-[#FFCC00]">Ροή Ανακοινώσεων</h2>
-                        <div className="h-1.5 w-40 bg-[#FFCC00] rounded-full" />
+        <div className="space-y-10">
+            {/* Top Bar Navigation Header in EU Flag Theme */}
+            <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-4 border-b border-[#FFCC00]/20">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-3.5">
+                        <div className="p-3.5 bg-gradient-to-br from-[#003399] to-[#001A4D] rounded-2xl border-2 border-[#FFCC00] shadow-xl shadow-[#003399]/50 flex items-center justify-center relative">
+                            <span className="material-symbols-outlined text-3xl text-[#FFCC00]">directions_bus</span>
+                            <span className="absolute -top-1 -right-1 text-[10px]">⭐</span>
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <span className="bg-[#FFCC00] text-[#003399] px-2 py-0.5 rounded text-[8px] font-[1000] uppercase italic tracking-wider">
+                                    EU TRANSIT PROTOCOL
+                                </span>
+                            </div>
+                            <h2 className="text-4xl lg:text-5xl font-[1000] uppercase italic tracking-tighter text-[#003399] dark:text-[#FFCC00] drop-shadow-md">
+                                {isEn ? "Real-Time Navigation" : "Πλοήγηση Real-Time"}
+                            </h2>
+                            <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+                                European Accessible Public Transport Intelligence
+                            </p>
+                        </div>
                     </div>
-                    <div className="flex gap-4">
-                        <span className="bg-[#003399] text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] animate-pulse shadow-[0_0_15px_rgba(0,51,153,0.5)]">Live Signal</span>
-                        <span className={cn(
-                            "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em]",
-                            isTranslating ? "bg-[#FFCC00] text-[#003399] shadow-[0_0_15px_rgba(255,204,0,0.5)] animate-pulse" : "bg-white/10 text-slate-400"
-                        )}>
-                            {isTranslating ? "Vision AI Active" : "Waiting for SL input"}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                    <span className="bg-[#002266] text-white px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-[#FFCC00]/30 shadow-lg shadow-[#002266]/50">
+                        <span className="h-2 w-2 rounded-full bg-green-400 animate-ping" />
+                        <span className="material-symbols-outlined text-sm text-green-400">wifi_tethering</span>
+                        OASA Bus GPS Lock
+                    </span>
+                </div>
+            </header>
+
+            {/* Bus & Tram Line Selector Switcher - Styled in EU Royal Blue & Gold */}
+            <div className="space-y-3">
+                <div className="flex justify-between items-center px-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[#FFCC00] flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-sm">tune</span>
+                        {isEn ? "Select Active European Transit Line" : "Επιλογή Ενεργής Γραμμής Μετακίνησης"}
+                    </span>
+                    <span className="text-[9px] font-bold uppercase text-white/50 tracking-widest">
+                        {isEn ? "4 Lines Monitored Live" : "4 Γραμμές σε Ζωντανή Παρακολούθηση"}
+                    </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                        { id: "140", name: isEn ? "Bus 140" : "Λεωφορείο 140", desc: isEn ? "Polygono - Glyfada (OASA)" : "Πολύγωνο - Γλυφάδα (OASA)", icon: "directions_bus" },
+                        { id: "040", name: isEn ? "Express 040" : "Express 040", desc: isEn ? "Syntagma - Lavrio (Express)" : "Σύνταγμα - Λαύριο (Express)", icon: "directions_bus" },
+                        { id: "608", name: isEn ? "Trolley 608" : "Τρόλεϊ 608", desc: isEn ? "Zografou - Thiseio (Trolley)" : "Ζωγράφου - Θησείο (Trolley)", icon: "electric_bolt" },
+                        { id: "T6", name: isEn ? "Tram T6" : "Τραμ T6", desc: isEn ? "Syntagma - Pikrodafni (Tram Coast)" : "Σύνταγμα - Πικροδάφνη (Tram)", icon: "tram" }
+                    ].map((line) => {
+                        const isSelected = selectedLine === line.id;
+                        return (
+                            <button
+                                key={line.id}
+                                onClick={() => handleLineSelect(line.id)}
+                                className={cn(
+                                    "flex flex-col justify-between p-5 rounded-3xl transition-all duration-300 cursor-pointer text-left relative overflow-hidden border-2",
+                                    isSelected
+                                        ? "bg-gradient-to-br from-[#003399] via-[#002266] to-[#001A4D] text-white border-[#FFCC00] shadow-[0_0_30px_rgba(255,204,0,0.35)] scale-[1.02]"
+                                        : "bg-[#001e5c]/80 hover:bg-[#002b80] text-white/90 border-[#FFCC00]/20 hover:border-[#FFCC00]/60 shadow-lg shadow-[#001a4d]/50"
+                                )}
+                            >
+                                {/* EU Star Glow Background */}
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-[#FFCC00]/10 rounded-full blur-xl pointer-events-none" />
+
+                                <div className="flex items-center justify-between mb-3 relative z-10">
+                                    <div className={cn(
+                                        "p-2.5 rounded-2xl flex items-center justify-center shadow-md",
+                                        isSelected ? "bg-[#FFCC00] text-[#003399]" : "bg-[#003399] text-[#FFCC00] border border-[#FFCC00]/30"
+                                    )}>
+                                        <span className="material-symbols-outlined text-xl">{line.icon}</span>
+                                    </div>
+                                    <span className={cn(
+                                        "text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border",
+                                        isSelected ? "bg-[#FFCC00] text-[#003399] border-transparent font-[1000]" : "bg-white/10 text-[#FFCC00] border-[#FFCC00]/30"
+                                    )}>
+                                        {isSelected ? "Active Line" : "Select Line"}
+                                    </span>
+                                </div>
+
+                                <div className="space-y-1 relative z-10">
+                                    <h4 className="text-lg font-[1000] italic uppercase tracking-tight text-white flex items-center gap-2">
+                                        {line.name}
+                                    </h4>
+                                    <p className="text-[11px] font-bold text-white/70 tracking-wide leading-tight">
+                                        {line.desc}
+                                    </p>
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Main Telematics Glassmorphism Dashboard Card in EU Blue & Gold */}
+            <section className="bg-gradient-to-br from-[#001A4D] via-[#003399] to-[#00153D] rounded-[45px] p-8 lg:p-12 text-white relative overflow-hidden shadow-2xl border-4 border-[#FFCC00]/40 group">
+                {/* Background EU Scan & Radar */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,204,0,0.08)_1px,transparent_1px)] bg-[length:28px_28px] opacity-40 pointer-events-none" />
+                <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                    className="absolute -top-1/2 -right-1/4 w-[800px] h-[800px] bg-gradient-to-b from-[#FFCC00]/15 via-blue-500/5 to-transparent rounded-full blur-3xl pointer-events-none"
+                />
+
+                {/* Top Info Header */}
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-8 border-b border-white/15">
+                    <div className="space-y-3">
+                        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 bg-[#FFCC00] rounded-full shadow-lg shadow-[#FFCC00]/30">
+                            <span className="h-2 w-2 rounded-full bg-blue-900 animate-pulse" />
+                            <span className="text-[10px] font-[1000] text-[#003399] uppercase tracking-[0.25em]">
+                                🇪🇺 OASA {lineName} Telemetry Active
+                            </span>
+                        </div>
+                        <h3 className="text-4xl lg:text-6xl font-[1000] italic uppercase tracking-tighter leading-none flex items-center gap-4 text-white drop-shadow-xl">
+                            <span className="material-symbols-outlined text-4xl lg:text-5xl text-[#FFCC00]">
+                                {selectedLine === "T6" ? "tram" : selectedLine === "608" ? "electric_bolt" : "directions_bus"}
+                            </span>
+                            {lineName}
+                        </h3>
+                        <p className="text-sm lg:text-lg font-bold text-white/80 uppercase tracking-widest flex items-center gap-2">
+                            <span className="material-symbols-outlined text-base text-[#FFCC00]">near_me</span>
+                            {route}
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => fetchTelemetry(selectedLine)}
+                            className="flex items-center gap-2.5 px-6 py-3.5 bg-[#FFCC00] hover:bg-yellow-300 text-[#003399] rounded-2xl text-xs font-[1000] uppercase tracking-widest transition-all cursor-pointer shadow-xl shadow-[#FFCC00]/30 hover:scale-105"
+                        >
+                            <span className="material-symbols-outlined text-base">sync</span>
+                            Refresh Data
+                        </button>
+                    </div>
+                </div>
+
+                {/* Metrics Grid - Styled in EU Glass */}
+                <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                    {/* Speedometer Gauge Card */}
+                    <div className="bg-[#002266]/70 backdrop-blur-xl rounded-[32px] p-6 border-2 border-[#FFCC00]/30 flex flex-col justify-between hover:border-[#FFCC00] transition-all shadow-xl">
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[#FFCC00] flex items-center gap-2">
+                                <span className="material-symbols-outlined text-sm">speed</span>
+                                Live Speed (km/h)
+                            </span>
+                            <span className="text-[9px] font-black text-green-400 bg-green-500/20 px-3 py-1 rounded-full border border-green-500/40">
+                                {speed > 55 ? "Express Pace" : speed < 35 ? "Urban Pace" : "Normal Pace"}
+                            </span>
+                        </div>
+                        <div className="flex items-baseline gap-3 my-2">
+                            <motion.span
+                                key={speed}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="text-6xl lg:text-7xl font-[1000] italic text-[#FFCC00] tracking-tighter leading-none drop-shadow-2xl"
+                            >
+                                {speed}
+                            </motion.span>
+                            <span className="text-xl font-black text-white/70 uppercase">km/h</span>
+                        </div>
+                        <div className="w-full bg-black/40 h-3.5 rounded-full overflow-hidden mt-4 border border-white/10">
+                            <motion.div
+                                animate={{ width: `${Math.min(100, (speed / 80) * 100)}%` }}
+                                transition={{ duration: 0.8 }}
+                                className="h-full bg-gradient-to-r from-green-400 via-[#FFCC00] to-yellow-300 rounded-full shadow-[0_0_15px_#FFCC00]"
+                            />
+                        </div>
+                    </div>
+
+                    {/* ETA Countdown Card */}
+                    <div className="bg-[#002266]/70 backdrop-blur-xl rounded-[32px] p-6 border-2 border-[#FFCC00]/30 flex flex-col justify-between hover:border-[#FFCC00] transition-all shadow-xl">
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[#FFCC00] flex items-center gap-2">
+                                <span className="material-symbols-outlined text-sm">schedule</span>
+                                Estimated Arrival
+                            </span>
+                            <span className="text-[9px] font-black text-[#003399] bg-[#FFCC00] px-3 py-1 rounded-full border border-[#FFCC00]">
+                                Target: {stops[activeStopIndex] || stops[0]}
+                            </span>
+                        </div>
+                        <div className="flex items-baseline gap-2 my-2">
+                            <motion.span
+                                key={eta}
+                                initial={{ opacity: 0, y: -5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="text-6xl lg:text-7xl font-[1000] italic text-white tracking-tighter leading-none drop-shadow-2xl"
+                            >
+                                {eta.toFixed(1)}
+                            </motion.span>
+                            <span className="text-2xl font-black text-[#FFCC00] italic">min</span>
+                        </div>
+                        <p className="text-[10px] font-black text-[#FFCC00]/80 uppercase tracking-widest mt-4">
+                            Next Stop: <span className="text-white">{stops[Math.min(stops.length - 1, activeStopIndex + 1)]}</span>
+                        </p>
+                    </div>
+
+                    {/* GPS Coordinates & Haptics Sync Card */}
+                    <div className="bg-[#002266]/70 backdrop-blur-xl rounded-[32px] p-6 border-2 border-[#FFCC00]/30 flex flex-col justify-between hover:border-[#FFCC00] transition-all shadow-xl">
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[#FFCC00] flex items-center gap-2">
+                                <span className="material-symbols-outlined text-sm">location_on</span>
+                                GPS Telemetry & Sync
+                            </span>
+                            <span className="text-[9px] font-black text-sky-300 bg-sky-500/20 px-3 py-1 rounded-full border border-sky-400/40">
+                                {latencyMs}ms Latency
+                            </span>
+                        </div>
+                        <div className="space-y-2.5 my-2">
+                            <div className="flex justify-between items-center text-xs font-black">
+                                <span className="text-white/60 uppercase">Latitude:</span>
+                                <span className="text-white font-mono">{latOrigin}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs font-black">
+                                <span className="text-white/60 uppercase">Longitude:</span>
+                                <span className="text-white font-mono">{lngOrigin}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs font-black pt-2 border-t border-white/10">
+                                <span className="text-white/60 uppercase">Haptic Guidance:</span>
+                                <span className="text-[#FFCC00]">Standard Pulse</span>
+                            </div>
+                        </div>
+                        <p className="text-[10px] font-black text-green-400 uppercase tracking-widest mt-2 flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+                            Satellite Tracking Lock Confirmed
+                        </p>
+                    </div>
+                </div>
+
+                {/* Progress Route Pipeline */}
+                <div className="relative z-10 bg-[#00153D]/80 rounded-[35px] p-6 lg:p-8 backdrop-blur-md border-2 border-[#FFCC00]/30 shadow-inner">
+                    <div className="flex justify-between items-center mb-6">
+                        <h4 className="text-xs font-black uppercase tracking-widest text-white/90 flex items-center gap-2">
+                            <span className="material-symbols-outlined text-sm text-[#FFCC00]">linear_scale</span>
+                            Route Timeline & Accessible Station Stops
+                        </h4>
+                        <span className="text-[10px] font-[1000] uppercase text-[#FFCC00] tracking-widest bg-[#FFCC00]/15 px-3 py-1 rounded-full border border-[#FFCC00]/30">
+                            Progress: {progress}%
                         </span>
+                    </div>
+
+                    <div className="relative h-20 flex items-center my-4">
+                        {/* Connecting Line */}
+                        <div className="absolute inset-x-8 h-3.5 bg-black/50 rounded-full overflow-hidden border border-white/10">
+                            <motion.div
+                                className="h-full bg-gradient-to-r from-sky-400 via-[#FFCC00] to-yellow-300 shadow-[0_0_20px_#FFCC00] rounded-full"
+                                animate={{ width: `${progress}%` }}
+                                transition={{ ease: "easeInOut", duration: 1.2 }}
+                            />
+                        </div>
+
+                        {/* Station Nodes */}
+                        <div className="w-full flex justify-between relative px-6 z-10">
+                            {stops.map((station, idx) => {
+                                const stepProgress = (idx / Math.max(1, stops.length - 1)) * 100;
+                                const isPassed = progress >= stepProgress;
+
+                                return (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setActiveStopIndex(idx)}
+                                        className="flex flex-col items-center gap-3 cursor-pointer group/node transition-all"
+                                    >
+                                        <div className={cn(
+                                            "w-8 h-8 rounded-full border-4 border-[#00153D] flex items-center justify-center transition-all duration-300 shadow-xl",
+                                            isPassed ? "bg-[#FFCC00] scale-125 shadow-[0_0_20px_#FFCC00]" : "bg-blue-900 border-white/30 group-hover/node:bg-[#FFCC00]/50"
+                                        )}>
+                                            {isPassed && <span className="w-2.5 h-2.5 rounded-full bg-[#003399]" />}
+                                        </div>
+                                        <div className="flex flex-col items-center text-center">
+                                            <span className={cn(
+                                                "text-[10px] lg:text-xs font-black uppercase italic tracking-wider transition-colors duration-300",
+                                                isPassed ? "text-[#FFCC00] drop-shadow-md" : "text-white/60 group-hover/node:text-white"
+                                            )}>
+                                                {station}
+                                            </span>
+                                            <span className="text-[8px] font-bold uppercase text-white/40 tracking-widest mt-0.5">
+                                                Stop #{idx + 1}
+                                            </span>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    );
+};
+
+const SupportView = ({ selectedLang = "el" }: { selectedLang?: "en" | "el" }) => {
+    const isEn = selectedLang === "en";
+
+    const [messages, setMessages] = useState([
+        {
+            id: 1,
+            sender: isEn ? 'GENERAL SUPPORT' : 'ΓΕΝΙΚΉ ΥΠΟΣΤΉΡΙΞΗ',
+            text: isEn ? 'Hello! How can we assist you today?' : 'Γεια σας! Πώς μπορούμε να σας βοηθήσουμε σήμερα;',
+            isUser: false
+        },
+        {
+            id: 2,
+            sender: isEn ? 'YOU' : 'ΕΣΕΊΣ',
+            text: isEn ? 'I would like accessibility information for Omonia Station.' : 'Θα ήθελα πληροφορίες για την προσβασιμότητα στον σταθμό Ομόνοια.',
+            isUser: true
+        },
+        {
+            id: 3,
+            sender: isEn ? 'AI INTERPRETER' : 'AI ΔΙΕΡΜΗΝΕΑΣ',
+            text: isEn
+                ? 'At Omonia Station (Lines 1 & 2), elevators A1, A2, and B1 are 100% operational with tactile paving and direct Sign Language video support.'
+                : 'Στον Σταθμό Ομόνοιας (Γραμμές 1 & 2), οι ανελκυστήρες A1, A2 και B1 λειτουργούν 100% κανονικά με οδηγούς τυφλών και άμεση βιντεοκλήση στη Νοηματική.',
+            isUser: false
+        }
+    ]);
+
+    const [input, setInput] = useState('');
+    const [isCalling, setIsCalling] = useState(false);
+    const [isTyping, setIsTyping] = useState(false);
+
+    const handleSend = async (customQuery?: string) => {
+        const queryToUse = (customQuery || input).trim();
+        if (!queryToUse) return;
+
+        const userMsg = {
+            id: Date.now(),
+            sender: isEn ? 'YOU' : 'ΕΣΕΊΣ',
+            text: queryToUse,
+            isUser: true
+        };
+        setMessages(prev => [...prev, userMsg]);
+        if (!customQuery) setInput('');
+        setIsTyping(true);
+
+        try {
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: queryToUse, lang: selectedLang })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setMessages(prev => [...prev, {
+                    id: Date.now() + 1,
+                    sender: data.modelName || (isEn ? 'AI ASSISTANT (FAISS RAG v3.0)' : 'AI ΔΙΕΡΜΗΝΕΑΣ (FAISS RAG v3.0)'),
+                    text: data.reply || (isEn ? "Service operational." : "Η υπηρεσία λειτουργεί κανονικά."),
+                    sourceDoc: data.sourceDoc,
+                    ragasScore: data.ragasScore,
+                    confidence: data.confidence,
+                    modelName: data.modelName,
+                    isUser: false
+                }]);
+            } else {
+                throw new Error("Chatbot API status error");
+            }
+        } catch (err) {
+            console.error("Failed to query open-source AI chatbot API", err);
+            setMessages(prev => [...prev, {
+                id: Date.now() + 1,
+                sender: isEn ? 'AI ASSISTANT' : 'AI ΔΙΕΡΜΗΝΕΑΣ',
+                text: isEn
+                    ? `Our DeafNav AI team has registered your message "${queryToUse}". A live Sign Language interpreter is active.`
+                    : `Η ομάδα DeafNav AI κατέγραψε το μήνυμά σας "${queryToUse}". Πιστοποιημένος διερμηνέας είναι ενεργός.`,
+                isUser: false
+            }]);
+        } finally {
+            setIsTyping(false);
+        }
+    };
+
+    const quickQueries = [
+        isEn ? "Omonia Station Accessibility" : "Προσβασιμότητα Σταθμού Ομόνοια",
+        isEn ? "Syntagma Elevators" : "Ανελκυστήρες Συντάγματος",
+        isEn ? "Sign Language Support" : "Υποστήριξη Νοηματικής"
+    ];
+
+    return (
+        <div className="space-y-10">
+            {/* Top Header */}
+            <header className="bg-gradient-to-r from-[#001A4D] via-[#003399] to-[#001A4D] p-8 rounded-[35px] border-2 border-[#FFCC00]/40 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+                <div className="space-y-1 relative z-10">
+                    <div className="flex items-center gap-2">
+                        <span className="bg-[#FFCC00] text-[#003399] px-2.5 py-0.5 rounded text-[8px] font-[1000] uppercase tracking-wider italic">
+                            EU ACCESSIBLE HELP CENTER
+                        </span>
+                        <span className="text-[9px] font-black text-green-400 bg-green-500/20 px-2.5 py-0.5 rounded-full border border-green-500/40 flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-ping" />
+                            {isEn ? "Live Interpreter Online" : "Ζωντανός Διερμηνέας Online"}
+                        </span>
+                    </div>
+                    <h2 className="text-3xl lg:text-5xl font-[1000] uppercase italic tracking-tighter text-white drop-shadow-md flex items-center gap-3">
+                        <span className="material-symbols-outlined text-4xl text-[#FFCC00]">support_agent</span>
+                        {isEn ? "Support Center" : "Κέντρο Υποστήριξης"}
+                    </h2>
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-300">
+                        {isEn ? "Live sign-language video assistance and SOS support." : "Ζωντανή βιντεοκλήση νοηματικής γλώσσας & υποστήριξη έκτακτης ανάγκης SOS."}
+                    </p>
+                </div>
+            </header>
+
+            {/* Main Layout Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                {/* Left Side: Live Video Assistance / SOS Call HUD */}
+                <div className="lg:col-span-7 space-y-6">
+                    <div className="bg-gradient-to-br from-[#001A4D] via-[#002266] to-[#00153D] rounded-[45px] p-8 border-4 border-[#FFCC00]/40 shadow-2xl space-y-6 text-white relative overflow-hidden">
+                        <div className="flex justify-between items-center border-b border-white/15 pb-4">
+                            <span className="text-xs font-[1000] uppercase tracking-widest text-[#FFCC00] flex items-center gap-2">
+                                <span className="material-symbols-outlined text-base">videocam</span>
+                                Video Feed • Sign Language Stream
+                            </span>
+                            <span className="bg-red-600 text-white text-[9px] font-[1000] uppercase px-3 py-1 rounded-full animate-pulse shadow-md">
+                                {isCalling ? "SOS VIDEO LIVE" : "SOS READY"}
+                            </span>
+                        </div>
+
+                        {/* Video Container Aspect Ratio */}
+                        <div className="aspect-video bg-black/80 rounded-[35px] overflow-hidden relative border-2 border-[#FFCC00]/30 shadow-2xl flex flex-col justify-center items-center">
+                            {!isCalling ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-gradient-to-t from-black/90 via-black/50 to-black/30 backdrop-blur-sm space-y-6 text-center">
+                                    <motion.button
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => setIsCalling(true)}
+                                        className="w-36 h-36 bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 rounded-full flex flex-col items-center justify-center shadow-[0_0_50px_rgba(220,38,38,0.7)] cursor-pointer border-4 border-white animate-pulse"
+                                    >
+                                        <span className="material-symbols-outlined text-5xl text-white mb-1">videocam</span>
+                                        <span className="text-white text-[11px] font-[1000] tracking-widest uppercase">SOS CALL</span>
+                                    </motion.button>
+
+                                    <p className="text-white font-[1000] uppercase italic tracking-wider text-lg max-w-sm drop-shadow-md">
+                                        {isEn ? "Press for immediate emergency video call." : "Πατήστε για άμεση κλήση έκτακτης ανάγκης με βίντεο."}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="w-full h-full relative">
+                                    <video
+                                        src="/videos/connecting-europe.mp4"
+                                        autoPlay
+                                        loop
+                                        muted
+                                        className="w-full h-full object-cover"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 flex flex-col justify-between p-6">
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center gap-2 bg-red-600 text-white px-3 py-1 rounded-full text-[10px] font-[1000] uppercase shadow-md animate-pulse">
+                                                <span className="h-2 w-2 rounded-full bg-white animate-ping" />
+                                                Live SOS Sign Language Stream
+                                            </div>
+                                            <span className="text-xs font-mono text-[#FFCC00] bg-black/60 px-3 py-1 rounded-full border border-white/10">
+                                                FPS: 60 • Interpreter #042
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center justify-center gap-4 pt-4">
+                                            <button
+                                                onClick={() => setIsCalling(false)}
+                                                className="bg-red-600 hover:bg-red-700 text-white px-8 py-3.5 rounded-2xl font-[1000] uppercase tracking-widest text-xs shadow-2xl hover:scale-105 transition-all border border-white cursor-pointer flex items-center gap-2"
+                                            >
+                                                <span className="material-symbols-outlined text-xl">call_end</span>
+                                                {isEn ? "END SOS CALL" : "ΤΕΡΜΑΤΙΣΜΟΣ ΚΛΗΣΗΣ"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Side: Open-Source AI Accessibility Chatbot */}
+                <div className="lg:col-span-5 space-y-6">
+                    <section className="bg-gradient-to-br from-[#001A4D] via-[#003399] to-[#00153D] rounded-[45px] p-8 border-4 border-[#FFCC00]/40 shadow-2xl text-white space-y-6 h-[680px] flex flex-col relative overflow-hidden">
+                        <header className="flex justify-between items-center border-b border-white/15 pb-4 relative z-10">
+                            <h3 className="text-2xl font-[1000] italic uppercase tracking-tight flex items-center gap-3 text-white">
+                                <span className="material-symbols-outlined text-[#FFCC00] text-3xl">chat</span>
+                                Live Chat
+                            </h3>
+                            <div className="flex items-center gap-2 text-[10px] font-[1000] text-green-400 bg-green-500/20 px-3 py-1 rounded-full border border-green-500/30 uppercase tracking-widest">
+                                <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+                                Online
+                            </div>
+                        </header>
+
+                        {/* Quick Question Chips */}
+                        <div className="flex flex-wrap gap-2 relative z-10">
+                            {quickQueries.map((q, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => handleSend(q)}
+                                    className="text-[9px] font-black uppercase tracking-wider bg-[#001e5c] hover:bg-[#FFCC00] text-white hover:text-[#003399] px-3 py-1.5 rounded-full border border-[#FFCC00]/30 transition-all cursor-pointer truncate max-w-[240px]"
+                                >
+                                    {q}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Messages Stream Container */}
+                        <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar relative z-10 flex flex-col justify-start">
+                            <AnimatePresence>
+                                {messages.map((msg: any) => (
+                                    <motion.div
+                                        key={msg.id}
+                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        className={cn(
+                                            "p-4 rounded-3xl text-xs max-w-[90%] space-y-1.5 shadow-lg border",
+                                            msg.isUser
+                                                ? "bg-[#FFCC00] text-[#003399] border-white self-end rounded-tr-sm font-bold"
+                                                : "bg-[#002266]/90 text-white self-start rounded-tl-sm border-[#FFCC00]/40 backdrop-blur-md"
+                                        )}
+                                    >
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className={cn("text-[9px] font-[1000] uppercase tracking-widest", msg.isUser ? "text-[#003399]/80" : "text-[#FFCC00]")}>
+                                                {msg.sender}
+                                            </p>
+                                            {!msg.isUser && msg.confidence && (
+                                                <span className="text-[8px] font-black uppercase text-green-400 bg-green-500/20 px-2 py-0.5 rounded-full border border-green-500/40">
+                                                    FAISS {(msg.confidence * 100).toFixed(0)}%
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="leading-relaxed">{msg.text}</p>
+                                        {!msg.isUser && msg.sourceDoc && (
+                                            <div className="pt-1.5 border-t border-white/10 text-[8px] font-medium text-white/50 flex flex-wrap justify-between gap-1">
+                                                <span>Ref: {msg.sourceDoc}</span>
+                                                {msg.ragasScore && (
+                                                    <span className="text-[#FFCC00]">
+                                                        RAGAS Rel: {Math.round(msg.ragasScore.relevance * 100)}% | Faith: {Math.round(msg.ragasScore.faithfulness * 100)}%
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+
+                            {isTyping && (
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-[#002266]/80 text-white px-4 py-2.5 rounded-2xl w-fit text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-[#FFCC00]/30">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-[#FFCC00] animate-ping" />
+                                    {isEn ? "AI Bot Typing..." : "Το AI πληκτρολογεί..."}
+                                </motion.div>
+                            )}
+                        </div>
+
+                        {/* Text Input Bar */}
+                        <div className="relative mt-auto pt-4 border-t border-white/15 relative z-10">
+                            <input
+                                type="text"
+                                placeholder={isEn ? "Type your message..." : "Πληκτρολογήστε εδώ..."}
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                className="w-full bg-[#00153D] border-2 border-[#FFCC00]/40 focus:border-[#FFCC00] rounded-2xl px-5 py-4 text-xs text-white placeholder:text-white/40 outline-none transition-all pr-14 shadow-inner"
+                            />
+                            <button
+                                onClick={() => handleSend()}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 mt-2 bg-[#FFCC00] hover:bg-yellow-300 text-[#003399] p-2.5 rounded-xl transition-all shadow-lg cursor-pointer"
+                            >
+                                <span className="material-symbols-outlined text-base font-black">send</span>
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const AnnouncementsView = ({ selectedLang = "en" }: { selectedLang?: "en" | "el" }) => {
+    const [transcriptEn, setTranscriptEn] = useState("Connecting Europe Facility - Supporting sustainable infrastructure.");
+    const [transcriptEl, setTranscriptEl] = useState("Διευκόλυνση «Συνδέοντας την Ευρώπη» - Υποστήριξη βιώσιμων υποδομών.");
+    const [isTranslating, setIsTranslating] = useState(true);
+    const [detectedGloss, setDetectedGloss] = useState("CONNECTING");
+    const [confidence, setConfidence] = useState(0.98);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const videoRef = useRef<HTMLVideoElement | null>(null);
+
+    const handleTimeUpdate = async (e: React.SyntheticEvent<HTMLVideoElement>) => {
+        const time = e.currentTarget.currentTime;
+        try {
+            const res = await fetch(`/api/ml/translate?video=connecting-europe.mp4&time=${time.toFixed(1)}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.transcription) {
+                    setTranscriptEn(data.transcription.en || "");
+                    setTranscriptEl(data.transcription.el || "");
+                }
+                if (data.detectedGloss) setDetectedGloss(data.detectedGloss);
+                if (data.confidence) setConfidence(data.confidence);
+                setIsTranslating(true);
+            }
+        } catch (err) {
+            console.error("Failed to query ML vision translation API", err);
+        }
+    };
+
+    const speakTranslation = () => {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const textToSpeak = selectedLang === "en" ? transcriptEn : transcriptEl;
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = selectedLang === "en" ? "en-US" : "el-GR";
+            utterance.onstart = () => setIsSpeaking(true);
+            utterance.onend = () => setIsSpeaking(false);
+            utterance.onerror = () => setIsSpeaking(false);
+            window.speechSynthesis.speak(utterance);
+        }
+    };
+
+    const activeTranscript = selectedLang === "en" ? transcriptEn : transcriptEl;
+
+    const glossesList = [
+        { gloss: "CONNECTING", labelEn: "Connecting Europe", labelEl: "Συνδέοντας την Ευρώπη", icon: "hub" },
+        { gloss: "INVESTING / TEN-T", labelEn: "Trans-European Network", labelEl: "Διευρωπαϊκό Δίκτυο", icon: "railway_alert" },
+        { gloss: "GREEN / ENERGY", labelEn: "Green Deal Mobility", labelEl: "Πράσινη Μετακίνηση", icon: "eco" },
+        { gloss: "BUILD / FUTURE", labelEn: "Digital Infrastructure", labelEl: "Ψηφιακές Υποδομές", icon: "memory" }
+    ];
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <div className="lg:col-span-8 space-y-8">
+                {/* EU Header Bar */}
+                <header className="bg-gradient-to-r from-[#001A4D] via-[#003399] to-[#001A4D] p-8 rounded-[35px] border-2 border-[#FFCC00]/40 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#FFCC00]/10 rounded-full blur-2xl pointer-events-none" />
+
+                    <div className="space-y-1 relative z-10">
+                        <div className="flex items-center gap-2">
+                            <span className="bg-[#FFCC00] text-[#003399] px-2.5 py-0.5 rounded text-[8px] font-[1000] uppercase tracking-wider italic">
+                                EU ACCESSIBILITY PROTOCOL
+                            </span>
+                            <span className="text-[10px] font-black text-green-400 bg-green-500/20 px-2.5 py-0.5 rounded-full border border-green-500/40">
+                                60 FPS ML Stream
+                            </span>
+                        </div>
+                        <h2 className="text-3xl lg:text-5xl font-[1000] uppercase italic tracking-tighter text-white drop-shadow-md flex items-center gap-3">
+                            <span className="material-symbols-outlined text-4xl text-[#FFCC00]">settings_accessibility</span>
+                            {selectedLang === "en" ? "Announcements Feed & ML Vision AI" : "Ροή Ανακοινώσεων & ML Vision AI"}
+                        </h2>
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-300">
+                            Open-Source Sign Language (GSL / ASL) Translation Engine
+                        </p>
                     </div>
                 </header>
 
-                <div className="relative group rounded-[40px] overflow-hidden shadow-2xl border-4 border-white dark:border-slate-800 bg-black aspect-video flex-shrink-0">
+                {/* Main Video & Vision AI HUD Container */}
+                <div className="relative group rounded-[45px] overflow-hidden shadow-2xl border-4 border-[#FFCC00]/50 bg-[#000d26] aspect-video flex-shrink-0">
                     <video
+                        ref={videoRef}
                         src="/videos/connecting-europe.mp4"
                         autoPlay
                         loop
                         muted
-                        className="w-full h-full object-cover opacity-80"
+                        className="w-full h-full object-cover opacity-90"
                         onTimeUpdate={handleTimeUpdate}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+                    {/* Gradient Overlay for Subtitle Legibility */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-transparent to-black/40 pointer-events-none" />
 
-                    {/* Real-time SL-to-English Transcript Overlay */}
-                    <div className="absolute bottom-24 inset-x-8 pointer-events-none">
-                        <AnimatePresence>
-                            {transcript && (
-                                <motion.div
-                                    key={transcript === "Awaiting video stream..." ? "awaiting" : "streaming"}
-                                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
-                                    className="bg-[#003399]/90 backdrop-blur-xl border-l-[6px] border-[#FFCC00] p-6 rounded-2xl shadow-2xl mx-auto max-w-3xl"
-                                >
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className={cn("material-symbols-outlined text-sm font-black text-[#FFCC00]", isTranslating && "animate-spin-slow")}>
+                    {/* Top Vision AI HUD Bar */}
+                    <div className="absolute top-5 left-6 right-6 flex items-center justify-between pointer-events-none">
+                        <div className="bg-[#001A4D]/80 backdrop-blur-xl px-5 py-2.5 rounded-2xl border-2 border-[#FFCC00]/50 flex items-center gap-3 shadow-xl">
+                            <span className="h-3 w-3 rounded-full bg-green-400 animate-ping" />
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-[1000] uppercase text-[#FFCC00] tracking-widest flex items-center gap-1.5">
+                                    <span className="material-symbols-outlined text-xs">visibility</span>
+                                    GLOSS: {detectedGloss}
+                                </span>
+                                <span className="text-[9px] font-bold text-white/80">
+                                    Confidence: {(confidence * 100).toFixed(1)}% • 21 Keypoints Tracked
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="bg-[#003399]/90 backdrop-blur-xl px-4 py-2 rounded-2xl border border-[#FFCC00]/30 text-[9px] font-[1000] text-white uppercase tracking-widest shadow-lg flex items-center gap-2">
+                            <span className="material-symbols-outlined text-xs text-[#FFCC00]">memory</span>
+                            YOLOv8 + MediaPipe Hands
+                        </div>
+                    </div>
+
+                    {/* Bottom Floating Translation Card & Audio Reader */}
+                    <div className="absolute bottom-6 inset-x-6 pointer-events-auto">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeTranscript}
+                                initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="bg-gradient-to-r from-[#003399]/95 via-[#002266]/95 to-[#001A4D]/95 backdrop-blur-2xl border-2 border-[#FFCC00] p-6 rounded-3xl shadow-[0_0_35px_rgba(0,51,153,0.6)] flex flex-col md:flex-row md:items-center justify-between gap-4"
+                            >
+                                <div className="space-y-1.5 flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-sm font-black text-[#FFCC00] animate-spin-slow">
                                             settings_accessibility
                                         </span>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-[#FFCC00]">
-                                            Sign Language to English {isTranslating && '(LIVE)'}
+                                        <span className="text-[10px] font-[1000] uppercase tracking-[0.2em] text-[#FFCC00]">
+                                            Sign Language Translation ({selectedLang.toUpperCase()}) • LIVE AI VISION
                                         </span>
                                     </div>
-                                    <p className="text-2xl font-[1000] text-white italic leading-tight uppercase tracking-tighter drop-shadow-md">
-                                        {transcript}
+                                    <p className="text-xl lg:text-2xl font-[1000] text-white italic leading-tight uppercase tracking-tighter drop-shadow-md">
+                                        "{activeTranscript}"
                                     </p>
-                                </motion.div>
-                            )}
+                                </div>
+
+                                {/* Speech Synthesizer Button */}
+                                <button
+                                    onClick={speakTranslation}
+                                    className={cn(
+                                        "flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-[1000] uppercase tracking-widest transition-all cursor-pointer shadow-lg self-start md:self-auto border",
+                                        isSpeaking
+                                            ? "bg-green-500 text-white border-green-300 animate-pulse"
+                                            : "bg-[#FFCC00] hover:bg-yellow-300 text-[#003399] border-transparent hover:scale-105"
+                                    )}
+                                >
+                                    <span className="material-symbols-outlined text-base">{isSpeaking ? "volume_up" : "campaign"}</span>
+                                    {isSpeaking ? "Speaking..." : "Read Aloud"}
+                                </button>
+                            </motion.div>
                         </AnimatePresence>
                     </div>
+                </div>
 
-                    <div className="grid grid-col-1 md:grid-cols-2 gap-8">
-                        <div className="glass rounded-[40px] p-10 shadow-2xl relative overflow-hidden group">
-                            <div className="absolute inset-0 bg-gradient-to-br from-[#003399]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                            <span className="material-symbols-outlined text-5xl text-[#003399] dark:text-[#FFCC00] mb-6 block">verified</span>
-                            <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-4 text-slate-800 dark:text-white">Connecting Europe</h3>
-                            <p className="text-slate-600 dark:text-slate-300 font-medium leading-relaxed">Seamless travel across 26 countries and 33 borders.</p>
-                        </div>
+                {/* Interactive Gesture Glossary Quick Bar */}
+                <div className="bg-[#00153D]/90 p-5 rounded-3xl border-2 border-[#FFCC00]/30 backdrop-blur-xl shadow-xl space-y-3">
+                    <div className="flex justify-between items-center px-1">
+                        <span className="text-[10px] font-[1000] uppercase tracking-[0.2em] text-[#FFCC00] flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-sm">translate</span>
+                            Active ML Sign Language Gloss Dictionary
+                        </span>
+                        <span className="text-[9px] font-bold uppercase text-white/50 tracking-widest">
+                            Real-time Recognition
+                        </span>
+                    </div>
 
-                        <div className="glass rounded-[40px] p-10 shadow-2xl relative overflow-hidden group delay-100">
-                            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                            <span className="material-symbols-outlined text-5xl text-green-500 mb-6 block">verified</span>
-                            <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-4 text-slate-800 dark:text-white">Green Deal</h3>
-                            <p className="text-slate-600 dark:text-slate-300 font-medium leading-relaxed">Rail accounts for less than 0.5% of transport-related GHG.</p>
-                        </div>
-
-                        <div className="glass rounded-[40px] p-10 shadow-2xl relative overflow-hidden group delay-200">
-                            <div className="absolute inset-0 bg-gradient-to-br from-[#FFCC00]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                            <span className="material-symbols-outlined text-5xl text-[#FFCC00] mb-6 block">verified</span>
-                            <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-4 text-slate-800 dark:text-white">TEN-T Goals</h3>
-                            <p className="text-slate-600 dark:text-slate-300 font-medium leading-relaxed">High-quality rail infrastructure by 2030.</p>
-                        </div>
-
-                        <div className="glass rounded-[40px] p-10 shadow-2xl relative overflow-hidden group delay-300">
-                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                            <span className="material-symbols-outlined text-5xl text-blue-500 mb-6 block">verified</span>
-                            <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-4 text-slate-800 dark:text-white">Digital Safety</h3>
-                            <p className="text-slate-600 dark:text-slate-300 font-medium leading-relaxed">ERTMS-compatible alert logic for wearable devices.</p>
-                        </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {glossesList.map((g) => {
+                            const isCurrent = detectedGloss.includes(g.gloss.split(" ")[0]);
+                            return (
+                                <div
+                                    key={g.gloss}
+                                    className={cn(
+                                        "p-3.5 rounded-2xl border transition-all flex flex-col justify-between cursor-pointer",
+                                        isCurrent
+                                            ? "bg-[#003399] border-[#FFCC00] shadow-[0_0_20px_rgba(255,204,0,0.3)] scale-[1.03]"
+                                            : "bg-[#002266]/50 border-white/10 hover:border-[#FFCC00]/40"
+                                    )}
+                                >
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="material-symbols-outlined text-sm text-[#FFCC00]">{g.icon}</span>
+                                        {isCurrent && <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-ping" />}
+                                    </div>
+                                    <span className="text-[10px] font-[1000] uppercase italic text-white tracking-wider">
+                                        {g.gloss}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-white/60 truncate mt-0.5">
+                                        {selectedLang === "en" ? g.labelEn : g.labelEl}
+                                    </span>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
 
-                <div className="glass rounded-[30px] p-8 border-l-[10px] border-[#003399] shadow-xl hover:scale-[1.01] transition-transform">
-                    <h4 className="text-[10px] font-black uppercase text-slate-400 mb-2">System Status</h4>
-                    <p className="text-lg font-black italic uppercase text-[#003399] dark:text-white leading-tight">
-                        High-Definition Sign Language Interpretation Active. Ensuring accessibility across the Pan-European network.
-                    </p>
+                {/* EU Priority Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-[#001E5C]/80 hover:bg-[#002B80] p-7 rounded-[35px] border-2 border-[#FFCC00]/30 hover:border-[#FFCC00] transition-all shadow-xl space-y-3 group">
+                        <div className="p-3 bg-[#FFCC00] text-[#003399] rounded-2xl w-fit shadow-md group-hover:scale-110 transition-transform">
+                            <span className="material-symbols-outlined text-2xl">verified</span>
+                        </div>
+                        <h3 className="text-xl font-[1000] italic uppercase tracking-tighter text-white">Connecting Europe</h3>
+                        <p className="text-white/70 font-bold text-xs leading-relaxed">
+                            Seamless accessible transit travel across 26 countries and 33 European borders.
+                        </p>
+                    </div>
+
+                    <div className="bg-[#001E5C]/80 hover:bg-[#002B80] p-7 rounded-[35px] border-2 border-[#FFCC00]/30 hover:border-[#FFCC00] transition-all shadow-xl space-y-3 group">
+                        <div className="p-3 bg-green-400 text-[#003399] rounded-2xl w-fit shadow-md group-hover:scale-110 transition-transform">
+                            <span className="material-symbols-outlined text-2xl">eco</span>
+                        </div>
+                        <h3 className="text-xl font-[1000] italic uppercase tracking-tighter text-white">Green Deal</h3>
+                        <p className="text-white/70 font-bold text-xs leading-relaxed">
+                            Rail transport accounts for less than 0.5% of greenhouse gas emissions in Europe.
+                        </p>
+                    </div>
+
+                    <div className="bg-[#001E5C]/80 hover:bg-[#002B80] p-7 rounded-[35px] border-2 border-[#FFCC00]/30 hover:border-[#FFCC00] transition-all shadow-xl space-y-3 group">
+                        <div className="p-3 bg-[#FFCC00] text-[#003399] rounded-2xl w-fit shadow-md group-hover:scale-110 transition-transform">
+                            <span className="material-symbols-outlined text-2xl">railway_alert</span>
+                        </div>
+                        <h3 className="text-xl font-[1000] italic uppercase tracking-tighter text-white">TEN-T Goals</h3>
+                        <p className="text-white/70 font-bold text-xs leading-relaxed">
+                            High-quality, accessible rail infrastructure deployed across Europe by 2030.
+                        </p>
+                    </div>
+
+                    <div className="bg-[#001E5C]/80 hover:bg-[#002B80] p-7 rounded-[35px] border-2 border-[#FFCC00]/30 hover:border-[#FFCC00] transition-all shadow-xl space-y-3 group">
+                        <div className="p-3 bg-sky-400 text-[#003399] rounded-2xl w-fit shadow-md group-hover:scale-110 transition-transform">
+                            <span className="material-symbols-outlined text-2xl">security</span>
+                        </div>
+                        <h3 className="text-xl font-[1000] italic uppercase tracking-tighter text-white">Digital Safety</h3>
+                        <p className="text-white/70 font-bold text-xs leading-relaxed">
+                            ERTMS-compatible emergency alert logic for wearable deaf accessibility devices.
+                        </p>
+                    </div>
+                </div>
+
+                {/* System Status Banner */}
+                <div className="bg-gradient-to-r from-[#001A4D] to-[#003399] rounded-[30px] p-7 border-l-8 border-[#FFCC00] shadow-2xl flex items-center gap-5">
+                    <div className="p-3 bg-[#FFCC00] text-[#003399] rounded-2xl shadow-md">
+                        <span className="material-symbols-outlined text-2xl">verified_user</span>
+                    </div>
+                    <div>
+                        <h4 className="text-[10px] font-[1000] uppercase text-[#FFCC00] tracking-[0.2em]">System Status</h4>
+                        <p className="text-base lg:text-lg font-[1000] italic uppercase text-white leading-tight">
+                            High-Definition Sign Language Interpretation Active. Ensuring accessibility across the Pan-European network.
+                        </p>
+                    </div>
                 </div>
             </div>
+
+            {/* Sidebar Announcements Panel */}
             <div className="lg:col-span-4 self-start sticky top-28">
-                <LiveAnnouncements />
+                <LiveAnnouncements selectedLang={selectedLang} />
             </div>
         </div>
     );
@@ -943,7 +1433,19 @@ const AnnouncementsView = () => {
 
 export default function Home() {
     const [activeTab, setActiveTab] = useState("dashboard");
+    const [selectedNavLine, setSelectedNavLine] = useState("140");
+    const [globalLang, setGlobalLang] = useState<"en" | "el">("en");
     const [hasEntered, setHasEntered] = useState(false);
+
+    const isEn = globalLang === "en";
+
+    const navItems = [
+        { id: "dashboard", label: isEn ? "Dashboard" : "Πίνακας Ελέγχου", icon: "dashboard" },
+        { id: "vibration", label: isEn ? "Vibration Settings" : "Ρυθμίσεις Δόνησης", icon: "bolt" },
+        { id: "navigation", label: isEn ? "Navigation" : "Πλοήγηση", icon: "map" },
+        { id: "announcements", label: isEn ? "Announcements" : "Ανακοινώσεις", icon: "campaign" },
+        { id: "support", label: isEn ? "Support" : "Υποστήριξη", icon: "support_agent" }
+    ];
 
     if (!hasEntered) {
         return <LandingPage onEnter={() => setHasEntered(true)} />;
@@ -964,14 +1466,14 @@ export default function Home() {
                     </div>
                 </div>
 
-                {/* 8 Buttons Navigation */}
+                {/* Navigation Items Bar */}
                 <nav className="flex h-full flex-1 justify-center max-w-5xl">
-                    {NAV_ITEMS.map((item) => (
+                    {navItems.map((item) => (
                         <button
                             key={item.id}
                             onClick={() => setActiveTab(item.id)}
                             className={cn(
-                                "flex flex-col items-center justify-center px-5 hover:bg-white/10 transition-all h-full text-[10px] font-black uppercase tracking-widest text-white/60 italic relative group",
+                                "flex flex-col items-center justify-center px-5 hover:bg-white/10 transition-all h-full text-[10px] font-black uppercase tracking-widest text-white/60 italic relative group cursor-pointer",
                                 activeTab === item.id && "text-white bg-white/5"
                             )}
                         >
@@ -992,15 +1494,36 @@ export default function Home() {
                     ))}
                 </nav>
 
-                {/* Right Side Info */}
-                <div className="ml-auto flex items-center gap-6">
+                {/* Right Side Info & Global Language Switcher */}
+                <div className="ml-auto flex items-center gap-4">
+                    <div className="flex bg-[#00153D] p-1 rounded-2xl border-2 border-[#FFCC00]/40 shadow-xl">
+                        <button
+                            onClick={() => setGlobalLang("en")}
+                            className={cn(
+                                "px-3.5 py-1.5 rounded-xl text-[10px] font-[1000] uppercase transition-all cursor-pointer flex items-center gap-1.5",
+                                globalLang === "en" ? "bg-[#FFCC00] text-[#003399] shadow-md scale-105" : "text-white/70 hover:text-white"
+                            )}
+                        >
+                            🇬🇧 EN
+                        </button>
+                        <button
+                            onClick={() => setGlobalLang("el")}
+                            className={cn(
+                                "px-3.5 py-1.5 rounded-xl text-[10px] font-[1000] uppercase transition-all cursor-pointer flex items-center gap-1.5",
+                                globalLang === "el" ? "bg-[#FFCC00] text-[#003399] shadow-md scale-105" : "text-white/70 hover:text-white"
+                            )}
+                        >
+                            🇬🇷 EL
+                        </button>
+                    </div>
+
                     <div className="hidden lg:flex flex-col items-end">
                         <span className="bg-[#FFCC00] text-[#003399] px-3 py-0.5 rounded text-[9px] font-[1000] uppercase italic shadow-lg shadow-[#FFCC00]/20 mb-1">
                             EU STANDARDS COMPLIANT
                         </span>
                         <div className="flex items-center gap-2">
                             <div className="h-1.5 w-1.5 bg-green-500 rounded-full animate-pulse" />
-                            <span className="text-[9px] font-black text-white/50 uppercase tracking-widest">System Online</span>
+                            <span className="text-[9px] font-black text-white/50 uppercase tracking-widest">{isEn ? "System Online" : "Σύστημα Online"}</span>
                         </div>
                     </div>
                 </div>
@@ -1015,14 +1538,11 @@ export default function Home() {
                         exit={{ opacity: 0, scale: 0.98, y: -10 }}
                         transition={{ duration: 0.3, ease: "easeOut" }}
                     >
-                        {activeTab === "dashboard" && <DashboardView setActiveTab={setActiveTab} />}
-                        {activeTab === "vibration" && <VibrationView />}
-                        {activeTab === "history" && <HistoryView />}
-                        {activeTab === "navigation" && <NavigationView />}
-                        {activeTab === "announcements" && <AnnouncementsView />}
-                        {activeTab === "education" && <EducationView />}
-                        {activeTab === "community" && <CommunityView />}
-                        {activeTab === "support" && <SupportView />}
+                        {activeTab === "dashboard" && <DashboardView setActiveTab={setActiveTab} onSelectLine={(lineId) => setSelectedNavLine(lineId)} selectedLang={globalLang} />}
+                        {activeTab === "vibration" && <VibrationView selectedLang={globalLang} />}
+                        {activeTab === "navigation" && <NavigationView initialLine={selectedNavLine} selectedLang={globalLang} />}
+                        {activeTab === "announcements" && <AnnouncementsView selectedLang={globalLang} />}
+                        {activeTab === "support" && <SupportView selectedLang={globalLang} />}
                     </motion.div>
                 </AnimatePresence>
             </main>
@@ -1033,7 +1553,7 @@ export default function Home() {
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setActiveTab("support")}
-                    className="w-20 h-20 bg-[#003399] text-white rounded-full flex items-center justify-center shadow-2xl border-4 border-[#FFCC00] group relative"
+                    className="w-20 h-20 bg-[#003399] text-white rounded-full flex items-center justify-center shadow-2xl border-4 border-[#FFCC00] group relative cursor-pointer"
                 >
                     <span className="material-symbols-outlined text-4xl">sign_language</span>
                     <div className="absolute top-0 right-0 h-4 w-4 bg-green-500 rounded-full border-2 border-white animate-pulse" />

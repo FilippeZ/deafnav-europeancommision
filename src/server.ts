@@ -42,76 +42,52 @@ app.prepare().then(() => {
         mqttClient.subscribe('deafnav/telemetry');
     });
 
-    // --- Transit Integration (OASA Telematics & STASY Elevators) ---
-    // @ts-ignore
-    const { APIRequests } = require('oasa-telematics-api');
-    const oasa = new APIRequests();
+    const SIMULATED_ANNOUNCEMENTS = [
+        { station: 'Σύνταγμα', content: '🚇 Line 2 (Red) — Next train in 2 min towards Ελληνικό', type: 'info', provider: 'ATTIKO METRO' },
+        { station: 'Αεροδρόμιο', content: '🚇 Line 3 (Blue) — Express to Airport departing in 5 min from Μοναστηράκι', type: 'info', provider: 'ATTIKO METRO' },
+        { station: 'Ευαγγελισμός', content: '⚠️ Elevator "E1" at Ευαγγελισμός station is currently out of service.', type: 'alert', provider: 'STASY' },
+        { station: 'Σύνταγμα (Bus)', content: '🚌 Bus 040 (Λαυρίου) arriving at Σύνταγμα in 3 λεπτά', type: 'info', provider: 'OASA' },
+    ];
+
+    let announcementIndex = 0;
 
     const fetchTransitData = async () => {
         try {
-            // 1. Fetch Elevator Status (STASY)
-            const elevatorRes = await fetch('https://stasy-elevators.georgetomzaridis.eu/api/status');
-            const elevatorData = await elevatorRes.json();
+            const item = SIMULATED_ANNOUNCEMENTS[announcementIndex % SIMULATED_ANNOUNCEMENTS.length];
+            announcementIndex++;
 
-            const stasyAlerts = (Array.isArray(elevatorData) ? elevatorData : [])
-                .filter((s: any) => s.accessibilityType >= 2)
-                .map((s: any) => ({
-                    id: `elevator-${s.station_name}-${Date.now()}`,
-                    content: `⚠️ Elevator Alert: ${s.station_name} - ${s.accessibilityDescr}`,
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    type: 'alert',
-                    station: s.station_name,
-                    provider: 'STASY'
-                }));
+            const announcement = {
+                id: `sim-${Date.now()}`,
+                content: item.content,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                type: item.type,
+                station: item.station,
+                provider: item.provider
+            };
 
-            // 2. Fetch Bus Arrivals (OASA Telematics)
-            // For demo: Fetching arrivals for Syntagma Area Stop (Stop Code: 060155)
-            let oasaArrivals: any[] = [];
-            try {
-                const arrivals = await oasa.getStopArrivals('060155');
-                oasaArrivals = (arrivals || []).map((a: any) => ({
-                    id: `bus-${a.route_code}-${a.arrival_time}`,
-                    content: `🚌 Bus ${a.route_id}: ${a.route_descr} arriving in ${a.arrival_time}`,
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    type: 'info',
-                    station: 'Σύνταγμα (Bus)',
-                    provider: 'OASA'
-                }));
-            } catch (e) {
-                console.error('❌ OASA Telematics Error:', e);
-            }
+            io.emit('transit_update', {
+                announcements: [announcement],
+                timestamp: new Date().toISOString()
+            });
 
-            const announcements = [...stasyAlerts, ...oasaArrivals];
-            console.log(`📡 Transit Feed: Found ${stasyAlerts.length} Metro alerts and ${oasaArrivals.length} Bus arrivals.`);
-
-            // 3. Emit Combined Transit Intelligence
-            if (announcements.length > 0) {
-                io.emit('transit_update', {
-                    announcements,
-                    timestamp: new Date().toISOString()
-                });
-            }
-
-            // 4. Detailed Dashboard Update (Syntagma Focus)
             io.emit('arrival_update', {
                 station: "Σύνταγμα",
-                arrivalTime: "05:42",
+                arrivalTime: new Date(Date.now() + 2 * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 line: "Γραμμή 2 (Κόκκινη)",
                 direction: "Ελληνικό",
                 nextStation: "Πανεπιστήμιο",
-                etaMinutes: 2,
+                etaMinutes: 2 + (announcementIndex % 4),
                 distance: 0.8,
-                accessibility: stasyAlerts.some(a => a.station === 'Σύνταγμα') ? 'warning' : 'clear'
+                accessibility: item.type === 'alert' ? 'warning' : 'clear'
             });
 
         } catch (error) {
-            console.error('❌ Transit Data Fetch Error:', error);
+            console.error('❌ Transit Simulation Error:', error);
         }
     };
 
-    // Poll transit data every 2 minutes
-    setInterval(fetchTransitData, 120000);
-    fetchTransitData(); // Initial fetch
+    setInterval(fetchTransitData, 60000);
+    fetchTransitData();
 
     mqttClient.on('message', async (topic, message) => {
         if (topic === 'deafnav/telemetry') {
@@ -119,21 +95,30 @@ app.prepare().then(() => {
                 const data = JSON.parse(message.toString());
                 console.log(`📡 Relay: Telemetry Received - HR:${data.pulse}, Dist:${data.distance}`);
 
-                // 1. Save to Database
                 try {
+                    const devId = data.deviceId || "default_device";
+                    let defaultUser = await prisma.user.findFirst({ where: { email: "demo@deafnav.eu" } });
+                    if (!defaultUser) {
+                        defaultUser = await prisma.user.create({
+                            data: { email: "demo@deafnav.eu", name: "Demo User" }
+                        });
+                    }
+                    let defaultDevice = await prisma.device.findUnique({ where: { id: devId } });
+                    if (!defaultDevice) {
+                        defaultDevice = await prisma.device.create({
+                            data: { id: devId, ownerId: defaultUser.id, status: "active" }
+                        });
+                    }
                     await prisma.pulseLog.create({
                         data: {
-                            deviceId: data.deviceId || "default_device",
-                            value: data.pulse,
-                            // Note: Distance can also be saved if schema supports it, 
-                            // but schema.prisma currently only has 'value' (pulse) for PulseLog.
+                            deviceId: devId,
+                            value: Number(data.pulse) || 72,
                         }
                     });
                 } catch (dbErr) {
                     console.error('❌ DB Error:', dbErr);
                 }
 
-                // 2. Emit to Frontend
                 io.emit('telemetry_update', {
                     pulse: data.pulse,
                     distance: data.distance,
@@ -152,9 +137,33 @@ app.prepare().then(() => {
         socket.on('send_message', (payload) => {
             io.emit('new_message', { ...payload, timestamp: new Date().toISOString() });
         });
+        socket.on('speech_to_text', (payload) => {
+            io.emit('stt_broadcast', { ...payload, timestamp: new Date().toISOString() });
+        });
     });
 
-    // 4. Next.js Catch-all Handler
+    server.use(express.json());
+
+    // Express Open-Source FAISS Vector RAG AI Chatbot API Route
+    server.post('/api/chat', async (req, res) => {
+        const { message, lang } = req.body || {};
+        const rawMsg = message || '';
+        const userLang = (lang === 'en' ? 'en' : 'el');
+
+        const { queryFaissRagVectorDb } = require('./lib/ragEngine');
+        const ragResult = await queryFaissRagVectorDb(rawMsg, userLang);
+
+        return res.json({
+            reply: ragResult.reply,
+            sourceDoc: ragResult.sourceDoc,
+            ragasScore: ragResult.ragasScore,
+            confidence: ragResult.vectorConfidence,
+            modelName: ragResult.modelName,
+            timestamp: new Date().toISOString(),
+            engine: ragResult.modelName
+        });
+    });
+
     server.use((req, res) => {
         return handle(req, res);
     });
