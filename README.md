@@ -13,7 +13,7 @@
 
 **DeafNav** is a state-of-the-art, EU-compliant public transit intelligence and accessibility platform engineered to empower Deaf, Hard-of-Hearing, and mobility-impaired passengers across European transit networks (Metro Lines, Express Buses, Trolleys, and Trams).
 
-It integrates **Real-Time OASA Telematics**, **Smart Haptic Bracelet Wearables**, **60 FPS ML Vision Sign Language Translation**, **24/7 Live GSL/ASL Video SOS Call Center with Human-in-the-Loop Oversight**, and an **Autonomous Open-Source FAISS Vector Database & RAG Chatbot Engine** evaluated with **RAGAS Metrics** adhering strictly to **EU AI Act Article 50** transparency.
+It integrates **Real-Time OASA Telematics**, **Smart Haptic Bracelet Wearables**, **60 FPS ML Vision Sign Language Translation**, **24/7 Live GSL/ASL Video SOS Call Center with Human-in-the-Loop Oversight**, and an **Autonomous Open-Source FAISS Vector Database & RAG Chatbot Engine** evaluated with **RAGAS Metrics** adhering strictly to **EU AI Act Article 50** transparency mandates.
 
 ---
 
@@ -39,37 +39,37 @@ It integrates **Real-Time OASA Telematics**, **Smart Haptic Bracelet Wearables**
 
 ---
 
-## 🌟 Architecture & Key Features
+## 🌟 Comprehensive Technical Feature Specifications
 
-### 🎯 1. Προηγμένη Αρχιτεκτονική RAG & Διανυσματική Εξειδίκευση (Vector Mastery)
-* **Διανυσματική Αναζήτηση & Σημασιολογική Θεμελίωση (Cosine Similarity)**: Σχεδιασμός μιας αυτόνομης, ντετερμινιστικής αρχιτεκτονικής pipeline RAG (`src/lib/ragEngine.ts`), η οποία χρησιμοποιεί την ανοιχτού κώδικα βάση **FAISS Vector DB** για πυκνές διανυσματικές αναπαραστάσεις (dense embeddings) και κατάταξη βάσει Cosine Similarity.
-* **Εξειδικευμένο Θεματικό Πλαίσιο & Ασφαλή Όρια**: Ανακτά δυναμικά επαληθευμένα δεδομένα σχετικά με την Κατάσταση των Ανελκυστήρων του Μετρό (Ομόνοια, Σύνταγμα, Πειραιάς), τους Σταθμούς Φόρτισης Αναπηρικών Αμαξιδίων, τις Ράμπες Επιβίβασης και το Μητρώο Ελληνικής Νοηματικής Γλώσσας (ΕΝΓ / GSL), διασφαλίζοντας ότι η Τεχνητή Νοημοσύνη (AI) λειτουργεί αυστηρά εντός ασφαλών ορίων.
+### 🎯 1. Advanced RAG Architecture & Vector Mastery
+* **Deterministic Vector Retrieval & Cosine Similarity Ranking**: Engineered an autonomous, deterministic Retrieval-Augmented Generation (RAG) pipeline (`src/lib/ragEngine.ts`) utilizing an open-source **FAISS Vector DB** for dense vector embeddings and Cosine Similarity scoring.
+* **Specialized Knowledge Base & Safety Guardrails**: Dynamically retrieves verified accessibility knowledge covering Metro Elevators (Omonia, Syntagma, Piraeus Hub), Wheelchair Charging Stations, Low-Floor Bus Ramps, and the Greek Sign Language (GSL) Registry, enforcing strict AI domain boundaries to prevent out-of-scope hallucinations.
 * **Multi-Tier LLM Pipeline**:
-  * **Default (100% Free & Local)**: Qwen 2.5 7B Instruct Open-Source LLM (Hugging Face Pipeline / Local Synthesizer) με τοπικό FAISS fallback.
-  * **Optional Upgrade**: Google Gemini 2.5 Flash LLM integration via `@google/genai` (ενεργοποιείται αυτόματα με το `GEMINI_API_KEY`).
+  * **Default (100% Free & Local)**: Qwen 2.5 7B Instruct Open-Source LLM (Hugging Face Pipeline & Local RAG Synthesizer) backed by local FAISS fallback.
+  * **Optional Enterprise Upgrade**: Google Gemini 2.5 Flash LLM integration via `@google/genai` (automatically activated when `GEMINI_API_KEY` is detected).
 
-### 📊 2. Ανάπτυξη Βασισμένη στην Αξιολόγηση & Ιχνηλασιμότητα LLMOps (Evaluation-Driven Development)
-* **Πλαίσιο Αξιολόγησης RAGAS**: Αναπτύχθηκε με τη φιλοσοφία της "Ανάπτυξης Βασισμένης στην Αξιολόγηση", ενσωματώνοντας ένα πλαίσιο LLM-as-a-Judge στη ροή CI/CD. Παρακολουθεί συνεχώς την ποιότητα των απαντήσεων, μεταδίδοντας μετρικές σε πραγματικό χρόνο που επιτυγχάνουν **98% Σχετικότητα (Relevance) RAGAS**, **99% Αξιοπιστία (Faithfulness) RAGAS** και **98% Εμπιστοσύνη (Confidence) FAISS**.
-* **Ιχνηλασιμότητα (Traceability) & Ελεγξιμότητα (Auditability)**: Μετριάζει τις ψευδαισθήσεις (hallucinations) και συμμορφώνεται με τα αυστηρά πρότυπα υψηλού κινδύνου της ΕΕ, διασφαλίζοντας πλήρη ιχνηλασιμότητα. Κάθε έξοδος της ΤΝ παράγει ακριβείς αναφορές στα έγγραφα-πηγές (π.χ. `Ref: Δείκτης Προσβασιμότητας Σταθμού Ομόνοιας [Doc ID: omonia_01]`).
+### 📊 2. Evaluation-Driven Development & LLMOps Traceability
+* **RAGAS Evaluation Framework**: Designed under an Evaluation-Driven Development framework, incorporating an LLM-as-a-Judge protocol directly into the CI/CD workflow. It continuously tracks response quality, streaming real-time metrics achieving **98% RAGAS Relevance**, **99% RAGAS Faithfulness**, and **98% FAISS Confidence**.
+* **Traceability & Auditability**: Mitigates hallucinations and fulfills EU high-risk AI standards by guaranteeing complete auditability. Every generated response includes explicit source document citations (e.g., `Ref: Omonia Metro Elevator Status Index [Doc ID: omonia_01]`).
 
-### 🚌 3. Ενσωματώσεις Πρακτόρων (Agentic Integrations) & Τηλεμετρία Πραγματικού Χρόνου
-* **Θεμελίωση σε Ζωντανά Δεδομένα ΟΑΣΑ**: Η μηχανή ΤΝ είναι ενσωματωμένη με την τηλεματική GPS των οχημάτων του ΟΑΣΑ (`src/app/api/metro/vehicles/route.ts`), ερμηνεύοντας δυναμικά σε πραγματικό χρόνο τις συνθήκες μετακίνησης—συμπεριλαμβανομένων των ταχυτήτων των οχημάτων, της αντίστροφης μέτρησης άφιξης (ETA) και της προσβασιμότητας χωρίς σκαλοπάτια (step-free) σε:
-  * **Bus 140**: Πολύγωνο → Γλυφάδα
-  * **Express 040**: Σύνταγμα → Λαύριο
-  * **Trolley 608**: Ζωγράφου → Θησείο
-  * **Tram T6**: Σύνταγμα → Πικροδάφνη
+### 🚌 3. Agentic Integrations & Real-Time Telematics Grounding
+* **Live OASA Vehicle Telemetry**: Grounded directly in live OASA GPS telematics (`src/app/api/metro/vehicles/route.ts`), the AI agent dynamically interprets real-time transit conditions—including live vehicle speeds, ETA countdowns, step-free access status, and route progress across key transit corridors:
+  * **Bus 140**: Polygono → Glyfada
+  * **Express 040**: Syntagma → Lavrio
+  * **Trolley 608**: Zografou → Thiseio
+  * **Tram T6**: Syntagma → Pikrodafni
 
-### ⌚ 4. Πολυτροπική Ενορχήστρωση IoT & Μηχανική Συμπερίληψης (Inclusive Edge Engineering)
-* **Μετάφραση Φυσικής Προσβασιμότητας**: Εφαρμόζει τις αρχές της "Συμπεριληπτικής Μηχανικής", μεταφράζοντας τις ψηφιακές εξόδους της ΤΝ σε φυσικές ενέργειες.
-* **Πρωτόκολλο Έξυπνων Απτικών Φορετών Συσκευών (Haptic Wearables)**: Ενορχηστρώνει συνεχείς ροές δεδομένων προς Έξυπνα Απτικά Βραχιόλια μέσω **Aedes MQTT Broker (`mqtt://localhost:1883`)**, Socket.IO telemetry events, και του **Web Vibration API**. Η ΤΝ ενεργοποιεί 4 προσαρμοσμένα μοτίβα απτικής ανάδρασης:
-  * **Soft Pulse (100ms)**: Απαλός παλμός τυπικής πλοήγησης.
-  * **Rapid Alert (50ms)**: Σειρά ταχέων ειδοποιήσεων.
-  * **Standard Guidance (200ms)**: Ισορροπημένη καθοδήγηση.
-  * **Emergency SOS (500ms)**: Δόνηση υψηλής έντασης για ειδοποιήσεις Έκτακτης Ανάγκης/SOS.
+### ⌚ 4. Multimodal IoT Orchestration & Inclusive Edge Engineering
+* **Physical Accessibility Translation**: Translates digital AI outputs into tangible physical feedback based on Inclusive Edge Engineering principles.
+* **Smart Haptic Wearables Protocol**: Orchestrates continuous data streams to Smart Haptic Bracelets over **Aedes MQTT Broker (`mqtt://localhost:1883`)**, Socket.IO telemetry events, and the **Web Vibration API**. The engine triggers 4 context-aware haptic patterns:
+  * **Soft Pulse (100ms)**: Mild tactile notification for standard navigation updates.
+  * **Rapid Alert (50ms)**: High-frequency pulse series for upcoming station transfers.
+  * **Standard Guidance (200ms)**: Balanced pulse for routine transit direction.
+  * **Emergency SOS (500ms)**: High-intensity repeated vibration pulse for critical SOS alerts.
 
-### ⚖️ 5. Συμμόρφωση με την Πράξη της ΕΕ για την ΤΝ (EU AI Act) & Ενσωμάτωση ML Vision
-* **Προληπτική Διαφάνεια (Άρθρο 50)**: Συμμορφώνεται πλήρως με τις υποχρεώσεις διαφάνειας της Πράξης της ΕΕ για την ΤΝ όσον αφορά τους συνομιλιακούς πράκτορες. Η δίγλωσση (🇬🇧 EN / 🇬🇷 EL) διεπαφή αποκαλύπτει σαφώς στους χρήστες την αλληλεπίδραση με σύστημα ΤΝ και θέτει διαφανή όρια σχετικά με τις δυνατότητες του chatbot.
-* **Συνεχής Ανθρώπινη Επίβλεψη (Human-in-the-Loop Oversight)**: Για να εναρμονιστεί με τις απαιτήσεις ασφαλείας σε κρίσιμες εφαρμογές, το σύστημα διαθέτει **24/7 Κέντρο Κλήσεων SOS** μέσω ζωντανού βίντεο στη Νοηματική (GSL/ASL). Οι χρήστες μπορούν να κλιμακώσουν άμεσα την κλήση από την ΤΝ σε πιστοποιημένο ανθρώπινο διερμηνέα μέσω μιας ροής βίντεο **60 FPS**, βελτιστοποιημένης με Μηχανική Μάθηση (ML), διασφαλίζοντας ότι οι περιορισμοί της ΤΝ δεν θα θέσουν ποτέ σε κίνδυνο την ασφάλεια των επιβατών.
+### ⚖️ 5. EU AI Act Compliance (Article 50) & ML Vision Human-in-the-Loop Oversight
+* **Proactive Transparency (Article 50)**: Fully complies with EU AI Act Article 50 transparency obligations for conversational AI agents. The full bilingual (🇬🇧 EN / 🇬🇷 EL) interface explicitly notifies users of AI interaction and establishes clear boundary disclosures regarding system capabilities.
+* **Continuous Human-in-the-Loop Oversight**: To guarantee passenger safety in safety-critical public transit scenarios, DeafNav features a **24/7 SOS Video Call Center** staffed by certified Greek (GSL) and American Sign Language (ASL) interpreters. Users can instantly escalate from AI assistance to a live human interpreter via a **60 FPS ML-optimized video stream**, ensuring AI boundaries never compromise passenger well-being.
 
 ---
 
@@ -209,14 +209,15 @@ Open your browser and navigate to:
 
 ---
 
-## 🇪🇺 EU Standards & Compliance
-* **EU AI Act (Article 50 Transparency)**: Full disclosure of AI interaction and transparent system capability boundaries.
-* **European Accessibility Act (EAA 2025)**: Complies with EU directives for barrier-free public transport telematics.
-* **W3C WCAG 2.1 AAA & EN 301 549**: Optimized contrast ratios, tactile haptics, and sign language visual redundancy.
+## 🇪🇺 EU Standards & Regulatory Compliance
+* **EU AI Act (Article 50 Transparency)**: Full disclosure of AI interaction, auditability, and transparent capability boundary enforcement.
+* **European Accessibility Act (EAA 2025)**: Complies with EU directives for barrier-free public transport telematics and public services.
+* **W3C WCAG 2.1 AAA & EN 301 549**: High contrast UI, tactile haptics, and visual sign language redundancy for all features.
 * **ERTMS Standard**: Integrated emergency vibration pulses for transit wearables.
 
 ---
 
 ## 📄 License
 This project is licensed under the MIT License - see the `LICENSE` file for details. Developed for European Commission accessible transit initiatives.
+
 
